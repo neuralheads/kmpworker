@@ -12,7 +12,7 @@ plugins {
     alias(libs.plugins.vanniktech.publish)   apply false
 }
 
-// Dokka only when explicitly running :generateDocs — not pulled into publish tasks.
+// Dokka only when explicitly running :generateDocs â€” not pulled into publish tasks.
 tasks.register("generateDocs") {
     group       = "documentation"
     description = "Generates Dokka HTML API documentation for all modules"
@@ -21,7 +21,7 @@ tasks.register("generateDocs") {
     })
 }
 
-// ── Secrets ────────────────────────────────────────────────────────────────────
+// â”€â”€ Secrets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 val localProps = java.util.Properties().also { props ->
     rootProject.file("local.properties").takeIf { it.exists() }
@@ -36,10 +36,10 @@ val globalSigningPass = getSecret("SIGNING_PASSWORD") ?: ""
 val globalCentralUser = getSecret("MAVEN_CENTRAL_USERNAME")
 val globalCentralPass = getSecret("MAVEN_CENTRAL_PASSWORD")
 
-// ── Group/version + credentials on all projects BEFORE plugin evaluation ───────
+// â”€â”€ Group/version + credentials on all projects BEFORE plugin evaluation â”€â”€â”€â”€â”€â”€â”€
 
 val versionName = properties["VERSION_NAME"]?.toString() ?: "0.1.0-alpha01"
-val groupId     = properties["GROUP"]?.toString()        ?: "io.neuralheads"
+val groupId     = properties["GROUP"]?.toString()        ?: "com.neuralheads"
 
 allprojects {
     group   = groupId
@@ -51,14 +51,14 @@ allprojects {
     if (globalCentralPass != null) extensions.extraProperties["mavenCentralPassword"]      = globalCentralPass
 }
 
-// ── Maven publishing — POM metadata + publish target ─────────────────────────
+// â”€â”€ Maven publishing â€” POM metadata + publish target â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
-// coordinates() is NOT called here — it lives in gradle/publish.gradle.kts which
+// coordinates() is NOT called here â€” it lives in gradle/publish.gradle.kts which
 // runs as part of each module's own evaluation (after plugin apply, before any
 // configure() reads/finalizes the groupId property).
 //
 // configure(KotlinMultiplatform(...)) / configure(AndroidSingleVariantLibrary(...))
-// are also NOT called here — vanniktech 0.30 auto-detects the project type.
+// are also NOT called here â€” vanniktech 0.30 auto-detects the project type.
 // The javaDocReleaseGeneration crash is suppressed per-module instead.
 
 subprojects {
@@ -72,7 +72,7 @@ subprojects {
                     if (project.name == "umbrella") "kmpworker"
                     else "kmpworker-${project.name}"
 
-                name.set("KMPWorker — $artifactId")
+                name.set("KMPWorker â€” $artifactId")
                 description.set(
                     "Reliability-first Kotlin Multiplatform background task processing " +
                     "library. Wraps WorkManager (Android) and BGTaskScheduler (iOS) " +

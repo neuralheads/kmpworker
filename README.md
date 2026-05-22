@@ -1,8 +1,8 @@
 # KMPWorker
 
-> A reliability-first Kotlin Multiplatform background task library for Android & iOS — by **NeuralHeads**.
+> A reliability-first Kotlin Multiplatform background task library for Android & iOS â€” by **NeuralHeads**.
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.neuralheads/kmpworker)](https://search.maven.org/search?q=io.neuralheads)
+[![Maven Central](https://img.shields.io/maven-central/v/com.neuralheads/kmpworker)](https://search.maven.org/search?q=com.neuralheads)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/kotlin-2.1.0-purple)](https://kotlinlang.org)
 
@@ -10,29 +10,29 @@
 
 ## What is KMPWorker?
 
-KMPWorker gives you a **single, platform-agnostic API** to schedule and execute background tasks across Android and iOS — backed by WorkManager on Android and BGTaskScheduler on iOS.
+KMPWorker gives you a **single, platform-agnostic API** to schedule and execute background tasks across Android and iOS â€” backed by WorkManager on Android and BGTaskScheduler on iOS.
 
-- ✅ One-time & periodic background tasks
-- ✅ Exponential / linear retry policies
-- ✅ Task state monitoring via `Flow`
-- ✅ SQLDelight-backed persistence (survives app restarts)
-- ✅ Offline queue with automatic replay on network restore
-- ✅ Group cancellation via tags
-- ✅ Execution context (retry count, payload, tags) delivered to handlers
-- ✅ Testing utilities with `FakeKmpWorker` — no WorkManager needed in tests
+- âœ… One-time & periodic background tasks
+- âœ… Exponential / linear retry policies
+- âœ… Task state monitoring via `Flow`
+- âœ… SQLDelight-backed persistence (survives app restarts)
+- âœ… Offline queue with automatic replay on network restore
+- âœ… Group cancellation via tags
+- âœ… Execution context (retry count, payload, tags) delivered to handlers
+- âœ… Testing utilities with `FakeKmpWorker` â€” no WorkManager needed in tests
 
 ---
 
 ## Installation
 
-### One import — everything included
+### One import â€” everything included
 
 ```kotlin
 // build.gradle.kts (KMP shared module)
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.neuralheads:kmpworker:0.1.0")
+            implementation("com.neuralheads:kmpworker:0.1.0")
         }
     }
 }
@@ -46,21 +46,21 @@ That's it. One line gives you: core + android + ios + persistence + offline queu
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.neuralheads:kmpworker-core:0.1.0")
+            implementation("com.neuralheads:kmpworker-core:0.1.0")
         }
         androidMain.dependencies {
-            implementation("io.neuralheads:kmpworker-android:0.1.0")
+            implementation("com.neuralheads:kmpworker-android:0.1.0")
         }
         iosMain.dependencies {
-            implementation("io.neuralheads:kmpworker-ios:0.1.0")
+            implementation("com.neuralheads:kmpworker-ios:0.1.0")
         }
         // Optional
         commonMain.dependencies {
-            implementation("io.neuralheads:kmpworker-persistence:0.1.0")
-            implementation("io.neuralheads:kmpworker-queue:0.1.0")
+            implementation("com.neuralheads:kmpworker-persistence:0.1.0")
+            implementation("com.neuralheads:kmpworker-queue:0.1.0")
         }
         commonTest.dependencies {
-            implementation("io.neuralheads:kmpworker-testing:0.1.0")
+            implementation("com.neuralheads:kmpworker-testing:0.1.0")
         }
     }
 }
@@ -127,7 +127,7 @@ class MyApp : Application() {
 }
 ```
 
-WorkManager is pre-warmed automatically via Jetpack App Startup — no manual init required.
+WorkManager is pre-warmed automatically via Jetpack App Startup â€” no manual init required.
 
 ---
 
@@ -153,7 +153,7 @@ func application(_ application: UIApplication,
 </array>
 ```
 
-> ⚠️ Apple controls when background tasks actually execute. See [iOS Limitations](docs/ios-limitations.md).
+> âš ï¸ Apple controls when background tasks actually execute. See [iOS Limitations](docs/ios-limitations.md).
 
 ---
 
@@ -162,7 +162,7 @@ func application(_ application: UIApplication,
 ```kotlin
 RetryPolicy.None                                       // no retry (default)
 RetryPolicy.Linear(delayMillis = 3_000)                // fixed 3s gap
-RetryPolicy.Exponential(initialDelayMillis = 5_000,    // 5s → 10s → 20s...
+RetryPolicy.Exponential(initialDelayMillis = 5_000,    // 5s â†’ 10s â†’ 20s...
                         maxRetries = 4)
 
 // Duration DSL
@@ -179,8 +179,8 @@ val queue = OfflineQueue(kmpWorker, repository, networkMonitor)
 queue.start()
 
 queue.enqueue(request)
-// → Online:  executes immediately
-// → Offline: persists to SQLDelight, replays automatically on reconnect
+// â†’ Online:  executes immediately
+// â†’ Offline: persists to SQLDelight, replays automatically on reconnect
 ```
 
 ---
@@ -205,13 +205,13 @@ fakeWorker.failureCount["upload"] = 2  // fail 2 times, then succeed
 
 | Artifact | Description |
 |---|---|
-| `io.neuralheads:kmpworker` | ⭐ Umbrella — one import, everything |
-| `io.neuralheads:kmpworker-core` | Core API, models, retry engine |
-| `io.neuralheads:kmpworker-android` | WorkManager integration |
-| `io.neuralheads:kmpworker-ios` | BGTaskScheduler integration |
-| `io.neuralheads:kmpworker-persistence` | SQLDelight task storage |
-| `io.neuralheads:kmpworker-queue` | Offline queue engine |
-| `io.neuralheads:kmpworker-testing` | FakeKmpWorker + test doubles |
+| `com.neuralheads:kmpworker` | â­ Umbrella â€” one import, everything |
+| `com.neuralheads:kmpworker-core` | Core API, models, retry engine |
+| `com.neuralheads:kmpworker-android` | WorkManager integration |
+| `com.neuralheads:kmpworker-ios` | BGTaskScheduler integration |
+| `com.neuralheads:kmpworker-persistence` | SQLDelight task storage |
+| `com.neuralheads:kmpworker-queue` | Offline queue engine |
+| `com.neuralheads:kmpworker-testing` | FakeKmpWorker + test doubles |
 
 ---
 

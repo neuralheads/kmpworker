@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.vanniktech.publish)
 }
 
-group   = "io.neuralheads"
+group   = "com.neuralheads"
 version = rootProject.properties["VERSION_NAME"]?.toString() ?: "0.1.0-alpha01"
 
 apply(from = rootProject.file("gradle/publish.gradle.kts"))
