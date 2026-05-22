@@ -1,0 +1,35 @@
+-- KMPWorker task event persistence
+-- Stores terminal task state events for cold-launch replay.
+-- An event is "replayed" once it has been re-emitted to TaskMonitor on the next launch.
+
+CREATE TABLE IF NOT EXISTS task_events (
+    id          INTEGER NOT NULL PRIMARY KEY,  -- auto rowid
+    task_id     TEXT    NOT NULL,
+    state_type  TEXT    NOT NULL,              -- 'Success' | 'Failed' | 'Cancelled'
+    error_msg   TEXT,                          -- Non-null for Failed states
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    will_retry  INTEGER NOT NULL DEFAULT 0,   -- 1 = true, 0 = false
+    replayed    INTEGER NOT NULL DEFAULT 0,   -- 1 = already replayed on cold launch
+    created_at  INTEGER NOT NULL
+);
+
+-- Record a new terminal event
+insertEvent:
+INSERT INTO task_events (task_id, state_type, error_msg, retry_count, will_retry, replayed, created_at)
+VALUES (?, ?, ?, ?, ?, 0, ?);
+
+-- Fetch all unread events for cold-launch replay (in order)
+getUnreplayed:
+SELECT * FROM task_events WHERE replayed = 0 ORDER BY created_at ASC;
+
+-- Mark a single event as replayed
+markReplayed:
+UPDATE task_events SET replayed = 1 WHERE id = ?;
+
+-- Delete all events for a task (e.g., on explicit cancel + clear)
+deleteForTask:
+DELETE FROM task_events WHERE task_id = ?;
+
+-- Prune old replayed events to prevent unbounded storage growth
+pruneOld:
+DELETE FROM task_events WHERE replayed = 1 AND created_at < ?;

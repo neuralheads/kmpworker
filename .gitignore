@@ -1,0 +1,52 @@
+# Gradle
+.gradle/
+build/
+*.gradle.tmp
+
+# Local properties
+local.properties
+*.properties
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Kotlin
+*.class
+*.kotlin_module
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# SQLDelight generated
+*/generated/
+
+# Publishing secrets
+*.keystore
+secrets.properties
+local.signing.properties
+
+# Node (docs)
+docs/node_modules/
+docs/.docusaurus/
+docs/build/

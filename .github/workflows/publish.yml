@@ -1,0 +1,76 @@
+# Publishes KMPWorker to Maven Central on every version tag (e.g. v0.1.0-alpha01)
+#
+# Required GitHub Actions secrets:
+#   MAVEN_CENTRAL_USERNAME   — Sonatype Central Portal token username
+#   MAVEN_CENTRAL_PASSWORD   — Sonatype Central Portal token password
+#   SIGNING_KEY              — Base64-encoded ASCII-armored GPG private key
+#   SIGNING_PASSWORD         — GPG key passphrase (empty if key has no passphrase)
+#
+# The iOS targets require macOS for Kotlin/Native compilation.
+
+name: Publish to Maven Central
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:        # allow manual trigger from Actions tab
+
+concurrency:
+  group: publish
+  cancel-in-progress: false  # never cancel a publish mid-flight
+
+jobs:
+  publish:
+    name: Publish all modules
+    runs-on: macos-latest   # required for iOS KN targets
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
+      - name: Run unit tests before publish
+        run: ./gradlew :android:testDebugUnitTest --no-daemon
+        env:
+          ANDROID_HOME: ${{ runner.tool_cache }}/android-sdk
+
+      - name: Publish to Maven Central
+        run: >
+          ./gradlew
+          publishAllPublicationsToMavenCentralRepository
+          --no-daemon
+          --no-configuration-cache
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          SIGNING_KEY:            ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD:       ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey:         ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername:       ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword:       ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+
+      - name: Upload build reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports
+          path: '**/build/reports/**'
+          retention-days: 7

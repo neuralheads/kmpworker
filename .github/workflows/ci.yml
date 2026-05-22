@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ── Lint ──────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/libs.versions.toml') }}
+
+      - name: Run lint
+        run: ./gradlew lint --stacktrace
+
+  # ── Android Tests ─────────────────────────────────────────────────────────
+  test-android:
+    name: Android Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/libs.versions.toml') }}
+
+      - name: Run core tests
+        run: ./gradlew :core:allTests --stacktrace
+
+      - name: Run persistence tests
+        run: ./gradlew :persistence:allTests --stacktrace
+
+      - name: Run queue tests
+        run: ./gradlew :queue:allTests --stacktrace
+
+      - name: Run testing module tests
+        run: ./gradlew :testing:allTests --stacktrace
+
+  # ── iOS Tests ─────────────────────────────────────────────────────────────
+  test-ios:
+    name: iOS Tests
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/libs.versions.toml') }}
+
+      - name: Run iOS tests (simulator)
+        run: ./gradlew :core:iosSimulatorArm64Test :ios:iosSimulatorArm64Test --stacktrace
+
+  # ── Publish Snapshot ──────────────────────────────────────────────────────
+  publish-snapshot:
+    name: Publish Snapshot
+    runs-on: macos-latest
+    needs: [ lint, test-android, test-ios ]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Publish to Maven Central (snapshot)
+        run: ./gradlew publishAllPublicationsToMavenCentralRepository --stacktrace
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}

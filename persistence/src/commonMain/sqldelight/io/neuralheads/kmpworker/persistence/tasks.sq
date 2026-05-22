@@ -1,0 +1,39 @@
+-- KMPWorker task persistence schema
+-- Database: KmpWorkerDatabase
+
+CREATE TABLE tasks (
+    id          TEXT    NOT NULL PRIMARY KEY,
+    type        TEXT    NOT NULL,           -- "OneTime" | "Periodic"
+    status      TEXT    NOT NULL,           -- "PENDING" | "RUNNING" | "SUCCESS" | "FAILED"
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    payload     TEXT,                       -- Optional serialized task payload
+    created_at  INTEGER NOT NULL            -- Unix epoch millis
+);
+
+-- Insert a new task (or ignore if already exists)
+insertTask:
+INSERT OR IGNORE INTO tasks (id, type, status, retry_count, payload, created_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+-- Update task status and retry count
+updateStatus:
+UPDATE tasks
+SET status = ?, retry_count = ?
+WHERE id = ?;
+
+-- Delete a completed task
+deleteTask:
+DELETE FROM tasks WHERE id = ?;
+
+-- Get all tasks
+getAll:
+SELECT * FROM tasks;
+
+-- Get only tasks that haven't completed yet (for recovery on app restart)
+getPending:
+SELECT * FROM tasks
+WHERE status IN ('PENDING', 'RUNNING');
+
+-- Get a single task by ID
+getById:
+SELECT * FROM tasks WHERE id = ?;

@@ -1,0 +1,23 @@
+# local.properties.template
+# ──────────────────────────────────────────────────────────────────────────────
+# Copy this file to local.properties and fill in your values.
+# DO NOT commit local.properties to version control (it is in .gitignore).
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Android SDK location (required)
+sdk.dir=/path/to/Android/sdk
+
+# ── Maven Central publishing credentials ──────────────────────────────────────
+# Obtain from: https://central.sonatype.com/account  →  User Token
+# (Generate a token — do NOT use your actual account password)
+MAVEN_CENTRAL_USERNAME=your-token-username
+MAVEN_CENTRAL_PASSWORD=your-token-password
+
+# ── GPG signing ───────────────────────────────────────────────────────────────
+# SIGNING_KEY   : Base64-encoded ASCII-armored GPG private key.
+#   To export:  gpg --export-secret-keys --armor KEY_ID | base64 -w 0
+#
+# SIGNING_PASSWORD : Passphrase for your GPG key.
+#   Leave empty if the key has no passphrase (generated with %no-protection).
+SIGNING_KEY=<base64-encoded-private-key>
+SIGNING_PASSWORD=

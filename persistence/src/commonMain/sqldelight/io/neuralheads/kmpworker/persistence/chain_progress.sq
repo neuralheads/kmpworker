@@ -1,0 +1,35 @@
+-- KMPWorker chain progress persistence
+-- Tracks which step a TaskChain is currently executing.
+-- On cold launch, in-progress chains are resumed from their last committed step.
+
+CREATE TABLE IF NOT EXISTS chain_progress (
+    chain_id     TEXT    NOT NULL PRIMARY KEY,
+    steps_json   TEXT    NOT NULL,   -- JSON array of step task IDs for replay
+    current_step INTEGER NOT NULL DEFAULT 0,
+    total_steps  INTEGER NOT NULL,
+    status       TEXT    NOT NULL DEFAULT 'RUNNING',  -- 'RUNNING' | 'COMPLETED' | 'FAILED'
+    updated_at   INTEGER NOT NULL
+);
+
+-- Upsert chain progress record
+upsertChain:
+INSERT OR REPLACE INTO chain_progress (chain_id, steps_json, current_step, total_steps, status, updated_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+-- Update current step and status (called after each step completes)
+updateStep:
+UPDATE chain_progress
+SET current_step = ?, status = ?, updated_at = ?
+WHERE chain_id = ?;
+
+-- Get a specific chain
+getChain:
+SELECT * FROM chain_progress WHERE chain_id = ?;
+
+-- Get all chains currently running (for cold-launch restore)
+getAllRunning:
+SELECT * FROM chain_progress WHERE status = 'RUNNING';
+
+-- Delete a chain record (on completion or manual clear)
+deleteChain:
+DELETE FROM chain_progress WHERE chain_id = ?;

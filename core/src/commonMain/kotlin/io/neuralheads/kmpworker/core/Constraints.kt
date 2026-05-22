@@ -1,0 +1,27 @@
+﻿package io.neuralheads.kmpworker.core
+
+import kotlinx.serialization.Serializable
+
+/**
+ * Platform conditions that must be satisfied before a task can execute.
+ *
+ * Platform support matrix:
+ * | Constraint         | Android | iOS     |
+ * |--------------------|---------|---------|
+ * | requiresInternet   | ✅       | Partial |
+ * | requiresCharging   | ✅       | ❌       |
+ * | batteryNotLow      | ✅       | ❌       |
+ *
+ * On iOS, only internet connectivity is partially respected via BGProcessingTaskRequest.
+ */
+@Serializable
+data class Constraints(
+    /** Task should only run when a network connection is available. */
+    val requiresInternet: Boolean = false,
+
+    /** Task should only run when the device is charging. Android only. */
+    val requiresCharging: Boolean = false,
+
+    /** Task should only run when battery level is not critically low. Android only. */
+    val batteryNotLow: Boolean = false
+)
