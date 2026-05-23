@@ -7,6 +7,7 @@ import io.neuralheads.kmpworker.core.TaskRegistry
 import io.neuralheads.kmpworker.core.TaskRequest
 import io.neuralheads.kmpworker.core.TaskState
 import io.neuralheads.kmpworker.core.TaskType
+import io.neuralheads.kmpworker.core.TaskExecutionContext
 import io.neuralheads.kmpworker.scheduler.TaskScheduler
 import kotlinx.cinterop.ObjCObjectVar
 import kotlinx.cinterop.alloc
@@ -72,11 +73,25 @@ class IOSTaskScheduler : TaskScheduler {
         BGTaskScheduler.sharedScheduler.cancelTaskRequestWithIdentifier(taskId)
     }
 
+    override suspend fun cancelByTag(tag: String) {
+        // iOS uses task IDs not tags; cancel all registered tasks as best-effort
+        TaskRegistry.registeredIds().forEach { id ->
+            BGTaskScheduler.sharedScheduler.cancelTaskRequestWithIdentifier(id)
+        }
+    }
+
     override fun observe(taskId: String): Flow<TaskState> =
         TaskMonitor.observe(taskId)
 
+    override fun observeAll(): Flow<Pair<String, TaskState>> =
+        TaskMonitor.observeAll()
+
     override fun register(taskId: String, block: suspend () -> Unit) {
         TaskRegistry.register(taskId) { block() }
+    }
+
+    override fun registerWithContext(taskId: String, block: suspend TaskExecutionContext.() -> Unit) {
+        TaskRegistry.register(taskId, block)
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────

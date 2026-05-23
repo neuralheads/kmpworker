@@ -2,7 +2,19 @@
 
 package io.neuralheads.kmpworker.persistence
 
-import platform.Foundation.NSDate
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import platform.posix.CLOCK_REALTIME
+import platform.posix.clock_gettime
+import platform.posix.timespec
 
-actual fun currentEpochMillis(): Long =
-    (NSDate().timeIntervalSince1970 * 1000.0).toLong()
+/**
+ * iOS/macOS: uses POSIX clock_gettime(CLOCK_REALTIME) to get epoch milliseconds.
+ * Avoids NSDate.timeIntervalSince1970 which has Kotlin/Native 2.x binding quirks.
+ */
+actual fun currentEpochMillis(): Long = memScoped {
+    val ts = alloc<timespec>()
+    clock_gettime(CLOCK_REALTIME, ts.ptr)
+    ts.tv_sec * 1_000L + ts.tv_nsec / 1_000_000L
+}
