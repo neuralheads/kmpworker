@@ -42,17 +42,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.1.0-alpha03] — 2026-05-23
 
-*(next items go here)*
+### Fixed
+- **`OfflineQueue.executeNow` is now `suspend`** — previously non-suspend caused non-deterministic
+  test behaviour where offline tasks could run outside the test coroutine scope
+- **`FakeKmpWorker.reset()` now clears the `SharedFlow` replay cache** — stale emissions no longer
+  leaked between test cases
+- **`AndroidNetworkMonitor`** — removed unnecessary `ACCESS_WIFI_STATE` usage and tightened
+  `NetworkCapabilities` checks to `TRANSPORT_CELLULAR` + `TRANSPORT_WIFI` only
+- **ProGuard / R8 consumer rules** added to `:core` and `:android` modules — prevents obfuscation
+  of `TaskHandler`, `TaskRequest`, and WorkManager worker classes in minified builds
+- **Package names aligned** — all public classes now consistently under
+  `io.neuralheads.kmpworker.*`; documentation and import examples corrected
+- **Vanniktech publish plugin upgraded `0.30.0 → 0.33.0`** — resolves Sonatype Central Portal
+  upload flow and signing API changes
+
+### Changed
+- `KmpWorkerConfig` logger defaults remain silent; `logLevel` property documentation clarified
+
+---
+
+## [0.1.0-alpha02] — 2026-05-23
+
+### Added
+- Android consumer ProGuard rules for `:core` module
+- `FakeNetworkMonitor` in `:testing` module for offline queue unit tests
+- `exponentialRetry()` and `linearRetry()` factory extension functions
+
+### Fixed
+- `RetryPolicy.None` tasks no longer incorrectly hit the exhausted-retry path when
+  `runAttemptCount > 0` (WorkManager default in test mode)
+- Robolectric coroutine flow tests now use `UnconfinedTestDispatcher` for reliable
+  emission capture without timing races
 
 ---
 
 ## Version Roadmap
 
 | Version | Status | Highlights |
-|---------|--------|-----------|
-| v0.1.0-alpha01 | **Current** | Core API, Android + iOS, EventStore, Chaining, NSURLSession |
+|---------|--------|-----------| 
+| v0.1.0-alpha01 | Released | Core API, Android + iOS, EventStore, Chaining, NSURLSession |
+| v0.1.0-alpha02 | Released | ProGuard rules, FakeNetworkMonitor, retry factory functions |
+| v0.1.0-alpha03 | **Current** | Bug fixes — suspend OfflineQueue, FakeKmpWorker reset, AndroidNetworkMonitor |
 | v0.1.0-beta01 | Planned | Public API freeze, instrumented tests on device |
 | v0.1.0 | Planned | Stable release, full docs, iOS Swift package |
 | v0.2.0 | Planned | Priority queues, task dependencies graph |

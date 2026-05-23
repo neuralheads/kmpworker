@@ -27,7 +27,7 @@ KMPWorker gives you a **single, platform-agnostic API** to schedule and execute 
 
 ## Installation
 
-> **Current version: `0.1.0-alpha02`**
+> **Current version: `0.1.0-alpha03`**
 
 ### One import — everything included
 
@@ -36,7 +36,7 @@ KMPWorker gives you a **single, platform-agnostic API** to schedule and execute 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker:0.1.0-alpha02")
+            implementation("com.neuralheads:kmpworker:0.1.0-alpha03")
         }
     }
 }
@@ -48,18 +48,18 @@ kotlin {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker-core:0.1.0-alpha02")
+            implementation("com.neuralheads:kmpworker-core:0.1.0-alpha03")
         }
         androidMain.dependencies {
-            implementation("com.neuralheads:kmpworker-android:0.1.0-alpha02")
+            implementation("com.neuralheads:kmpworker-android:0.1.0-alpha03")
         }
         // Optional
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker-persistence:0.1.0-alpha02")
-            implementation("com.neuralheads:kmpworker-queue:0.1.0-alpha02")
+            implementation("com.neuralheads:kmpworker-persistence:0.1.0-alpha03")
+            implementation("com.neuralheads:kmpworker-queue:0.1.0-alpha03")
         }
         commonTest.dependencies {
-            implementation("com.neuralheads:kmpworker-testing:0.1.0-alpha02")
+            implementation("com.neuralheads:kmpworker-testing:0.1.0-alpha03")
         }
     }
 }
