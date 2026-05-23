@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 package io.neuralheads.kmpworker.ios
 
 import io.neuralheads.kmpworker.core.TaskMonitor
@@ -6,11 +8,15 @@ import io.neuralheads.kmpworker.core.TaskRequest
 import io.neuralheads.kmpworker.core.TaskState
 import io.neuralheads.kmpworker.core.TaskType
 import io.neuralheads.kmpworker.scheduler.TaskScheduler
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.value
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import platform.BackgroundTasks.BGAppRefreshTaskRequest
 import platform.BackgroundTasks.BGProcessingTaskRequest
 import platform.BackgroundTasks.BGTaskScheduler
@@ -44,8 +50,6 @@ class IOSTaskScheduler : TaskScheduler {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     override suspend fun enqueue(request: TaskRequest) {
-        val bgScheduler = BGTaskScheduler.sharedScheduler
-
         when (request.type) {
             is TaskType.OneTime -> {
                 val taskRequest = BGAppRefreshTaskRequest(identifier = request.id)
@@ -81,13 +85,18 @@ class IOSTaskScheduler : TaskScheduler {
         request: platform.BackgroundTasks.BGTaskRequest,
         taskId: String
     ) {
-        var error: NSError? = null
-        val success = BGTaskScheduler.sharedScheduler.submitTaskRequest(request, error)
-        if (!success) {
-            val msg = error?.localizedDescription ?: "Unknown error"
-            TaskMonitor.tryEmit(taskId, TaskState.Failed(
-                throwable = Exception("BGTaskScheduler submit failed: $msg")
-            ))
+        // NSError** interop requires memScoped + ObjCObjectVar pattern
+        memScoped {
+            val errorPtr = alloc<ObjCObjectVar<NSError?>>()
+            val success = BGTaskScheduler.sharedScheduler.submitTaskRequest(request, errorPtr.ptr)
+            if (!success) {
+                val msg = errorPtr.value?.localizedDescription ?: "Unknown error"
+                TaskMonitor.tryEmit(
+                    taskId, TaskState.Failed(
+                        throwable = Exception("BGTaskScheduler submit failed: $msg")
+                    )
+                )
+            }
         }
     }
 }

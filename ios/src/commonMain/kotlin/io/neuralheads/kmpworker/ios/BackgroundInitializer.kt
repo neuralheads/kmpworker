@@ -1,4 +1,5 @@
-﻿package io.neuralheads.kmpworker.ios
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 
 import io.neuralheads.kmpworker.core.TaskMonitor
 import io.neuralheads.kmpworker.core.TaskRegistry

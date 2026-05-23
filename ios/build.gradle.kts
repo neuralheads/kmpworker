@@ -17,6 +17,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core"))
+            implementation(project(":scheduler"))   // IOSTaskScheduler implements TaskScheduler
             implementation(libs.kotlinx.coroutines.core)
         }
 
