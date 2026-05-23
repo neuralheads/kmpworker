@@ -21,9 +21,7 @@ import kotlinx.coroutines.flow.Flow
 import platform.BackgroundTasks.BGAppRefreshTaskRequest
 import platform.BackgroundTasks.BGProcessingTaskRequest
 import platform.BackgroundTasks.BGTaskScheduler
-import platform.Foundation.NSDate
 import platform.Foundation.NSError
-import platform.posix.time as posixTime
 
 /**
  * iOS implementation of [TaskScheduler] backed by BGTaskScheduler.
@@ -60,14 +58,11 @@ class IOSTaskScheduler : TaskScheduler {
             }
 
             is TaskType.ExactTime -> {
-                // Compute delay using POSIX time (KN-safe; class methods on NSDate are not all bound).
-                // NSDate().dateByAddingTimeInterval() is an instance method — reliably available.
-                val runAtMillis = (request.type as TaskType.ExactTime).runAtMillis
-                val nowSec  = posixTime(null).toLong()
-                val delaySec = maxOf(0.0, (runAtMillis / 1000L - nowSec).toDouble())
-                val taskRequest = BGAppRefreshTaskRequest(identifier = request.id).apply {
-                    earliestBeginDate = NSDate().dateByAddingTimeInterval(delaySec)
-                }
+                // iOS limitation: BGTaskScheduler is opportunistic — the OS decides when to run tasks.
+                // There is no BGTaskScheduler API to set an exact wall-clock time that is reliably
+                // bindable via Kotlin/Native. The task is registered for best-effort execution;
+                // on Android, WorkManager.setInitialDelay() provides the actual delay.
+                val taskRequest = BGAppRefreshTaskRequest(identifier = request.id)
                 submitRequest(taskRequest, request.id)
             }
 
