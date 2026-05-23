@@ -43,9 +43,17 @@ kotlin {
         androidMain.dependencies {
             api(project(":android"))
         }
-        iosMain.dependencies {
-            api(project(":ios"))
+
+        // applyDefaultHierarchyTemplate=false → must wire iosMain explicitly
+        val iosMain by creating {
+            dependsOn(commonMain.get())
+            dependencies {
+                api(project(":ios"))
+            }
         }
+        val iosX64Main by getting { dependsOn(iosMain) }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
     }
 }
 
