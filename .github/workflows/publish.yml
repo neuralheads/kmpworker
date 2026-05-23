@@ -3,8 +3,8 @@
 # Required GitHub Actions secrets:
 #   MAVEN_CENTRAL_USERNAME   — Sonatype Central Portal token username
 #   MAVEN_CENTRAL_PASSWORD   — Sonatype Central Portal token password
-#   SIGNING_KEY              — Base64-encoded ASCII-armored GPG private key
-#   SIGNING_PASSWORD         — GPG key passphrase (empty if key has no passphrase)
+#   SIGNING_KEY              — ASCII-armored GPG private key (-----BEGIN PGP PRIVATE KEY BLOCK-----)
+#   SIGNING_PASSWORD         — GPG key passphrase (empty string if key has no passphrase)
 #
 # The iOS targets require macOS for Kotlin/Native compilation.
 
@@ -44,24 +44,8 @@ jobs:
           cache-read-only: false
 
       # Note: wrapper-validation skipped — this is our own controlled repo.
-      # The locally-generated gradle-wrapper.jar is trusted.
-
-      # Import GPG key directly into the keyring — avoids all multiline env var issues.
-      - name: Import GPG signing key
-        env:
-          SIGNING_KEY_B64: ${{ secrets.SIGNING_KEY }}
-          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-        run: |
-          # Decode base64 key and import into GPG keyring
-          echo "$SIGNING_KEY_B64" | python3 -c "import base64,os,sys; sys.stdout.buffer.write(base64.b64decode(sys.stdin.read().strip()))" | gpg --batch --import
-          # Export key ID for Gradle signing
-          KEY_ID=$(gpg --list-secret-keys --keyid-format short | grep '^sec' | head -1 | sed 's|.*/||' | awk '{print $1}')
-          echo "SIGNING_KEY_ID=$KEY_ID" >> $GITHUB_ENV
-          # Allow gpg-agent to use loopback pinentry (no passphrase prompt)
-          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          gpgconf --kill gpg-agent 2>/dev/null || true
-
+      # SIGNING_KEY is stored as the actual ASCII-armored PGP key (not base64).
+      # GitHub Actions preserves newlines in multi-line secrets injected into env vars.
       - name: Publish to Maven Central
         run: >
           ./gradlew
@@ -69,13 +53,12 @@ jobs:
           --no-daemon
           --no-configuration-cache
         env:
-          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          SIGNING_PASSWORD:       ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingKeyId:              ${{ env.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingPassword:           ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_mavenCentralUsername:      ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword:      ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_CENTRAL_USERNAME:                        ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD:                        ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey:         ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername:       ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword:       ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
 
       - name: Upload build reports on failure
         if: failure()
