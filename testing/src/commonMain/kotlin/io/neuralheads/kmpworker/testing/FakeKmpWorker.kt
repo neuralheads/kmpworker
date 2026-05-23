@@ -138,8 +138,10 @@ class FakeKmpWorker : KmpWorker {
     override suspend fun enqueueChain(chain: TaskChain) {
         emitState(chain.id, TaskState.Scheduled)
         for ((index, step) in chain.steps.withIndex()) {
-            val stepRequest = chain.stepRequest(index)
-            enqueue(stepRequest.copy(id = step.id)) // execute under original step ID
+            // stepRequest() is internal to :core — inline its effect:
+            // it scopes the id as "${chain.id}:step:$index" internally, then
+            // FakeKmpWorker would restore step.id anyway. Net result: just use step.
+            enqueue(step)
             val lastState = allStatesFor(step.id).lastOrNull()
             if (lastState is TaskState.Failed && !lastState.willRetry) {
                 // Chain fails at this step
@@ -181,7 +183,7 @@ class FakeKmpWorker : KmpWorker {
     fun executionCountFor(taskId: String): Int =
         executionCount[taskId] ?: 0
 
-    /** Resets all state — handlers, enqueued/cancelled lists, execution counts. */
+    /** Resets all state — handlers, enqueued/cancelled lists, execution counts, and state history. */
     fun reset() {
         handlers.clear()
         enqueuedTasks.clear()
@@ -189,6 +191,7 @@ class FakeKmpWorker : KmpWorker {
         cancelledTags.clear()
         failureCount.clear()
         executionCount.clear()
+        states.resetReplayCache()
     }
 
     private suspend fun emitState(taskId: String, state: TaskState) {

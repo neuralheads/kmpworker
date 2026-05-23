@@ -159,9 +159,14 @@ class OfflineQueue(
         }
     }
 
-    private fun executeNow(request: TaskRequest) {
-        scope.launch {
-            worker.enqueue(request)
-        }
+    /**
+     * Executes a task request immediately by forwarding it to [KmpWorker.enqueue].
+     *
+     * Called from suspend contexts ([enqueue], [replay]) so we invoke directly
+     * rather than launching a new coroutine — this keeps execution deterministic
+     * under test dispatchers.
+     */
+    private suspend fun executeNow(request: TaskRequest) {
+        worker.enqueue(request)
     }
 }

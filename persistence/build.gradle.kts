@@ -72,3 +72,16 @@ sqldelight {
         }
     }
 }
+
+// SQLDelight's VerifyMigrationTask uses sqlite-jdbc which requires a native .dll.
+// On Windows the JNI binding fails with UnsatisfiedLinkError at Gradle task execution time.
+// CI (macOS/Linux) runs the check correctly; disable it locally on Windows only.
+if (org.gradle.internal.os.OperatingSystem.current().isWindows) {
+    // Actual task name: verifyCommonMainKmpWorkerDatabaseMigration
+    // SQLDelight's VerifyMigrationTask loads sqlite-jdbc via JNI which fails on Windows.
+    tasks.matching { task ->
+        task.name.contains("Migration") && task.name.startsWith("verify")
+    }.configureEach {
+        enabled = false
+    }
+}

@@ -3,7 +3,9 @@
  *
  * One dependency gives consumers everything:
  * ```kotlin
- * implementation("io.neuralheads:kmpworker:0.1.0-alpha01")
+ * implementation("io.neuralheads:kmpworker:0.1.0-alpha02")
+ * // Testing:
+ * testImplementation("com.neuralheads:kmpworker-testing:0.1.0-alpha02")
  * ```
  */
 plugins {
@@ -39,6 +41,9 @@ kotlin {
             api(project(":scheduler"))
             api(project(":persistence"))
             api(project(":queue"))
+        }
+        commonTest.dependencies {
+            api(project(":testing"))
         }
         androidMain.dependencies {
             api(project(":android"))

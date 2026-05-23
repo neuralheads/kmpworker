@@ -75,10 +75,11 @@ subprojects {
                 name.set("KMPWorker â€” $artifactId")
                 description.set(
                     "Reliability-first Kotlin Multiplatform background task processing " +
-                    "library. Wraps WorkManager (Android) and BGTaskScheduler (iOS) " +
-                    "behind a single, tested, coroutine-native API."
+                    "library. Provides a single coroutine-native API for scheduling one-time, " +
+                    "periodic, and chained tasks across Android and iOS, with SQLDelight " +
+                    "persistence, offline queue, retry policies, and Flow-based state monitoring."
                 )
-                inceptionYear.set("2024")
+                inceptionYear.set("2026")
                 url.set("https://github.com/neuralheads/kmpworker")
 
                 licenses {

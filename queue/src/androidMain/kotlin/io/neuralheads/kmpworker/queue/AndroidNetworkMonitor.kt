@@ -1,4 +1,4 @@
-﻿package io.neuralheads.kmpworker.queue
+package io.neuralheads.kmpworker.queue
 
 import android.content.Context
 import android.net.ConnectivityManager
