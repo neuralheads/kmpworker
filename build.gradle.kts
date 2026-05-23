@@ -1,5 +1,7 @@
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
-import com.vanniktech.maven.publish.SonatypeHost
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import java.net.URI
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -21,22 +23,7 @@ tasks.register("generateDocs") {
     })
 }
 
-// â”€â”€ Secrets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-val localProps = java.util.Properties().also { props ->
-    rootProject.file("local.properties").takeIf { it.exists() }
-        ?.inputStream()?.use(props::load)
-}
-
-fun getSecret(key: String): String? =
-    System.getenv(key) ?: localProps.getProperty(key)
-
-val globalSigningKey  = getSecret("SIGNING_KEY")
-val globalSigningPass = getSecret("SIGNING_PASSWORD") ?: ""
-val globalCentralUser = getSecret("MAVEN_CENTRAL_USERNAME")
-val globalCentralPass = getSecret("MAVEN_CENTRAL_PASSWORD")
-
-// â”€â”€ Group/version + credentials on all projects BEFORE plugin evaluation â”€â”€â”€â”€â”€â”€â”€
+// ————————————————————————————————————————————————————————————————————————————————————————————
 
 val versionName = properties["VERSION_NAME"]?.toString() ?: "0.1.0-alpha01"
 val groupId     = properties["GROUP"]?.toString()        ?: "com.neuralheads"
@@ -44,16 +31,11 @@ val groupId     = properties["GROUP"]?.toString()        ?: "com.neuralheads"
 allprojects {
     group   = groupId
     version = versionName
-
-    if (globalSigningKey  != null) extensions.extraProperties["signingInMemoryKey"]       = globalSigningKey
-    extensions.extraProperties["signingInMemoryKeyPassword"]                                = globalSigningPass
-    if (globalCentralUser != null) extensions.extraProperties["mavenCentralUsername"]      = globalCentralUser
-    if (globalCentralPass != null) extensions.extraProperties["mavenCentralPassword"]      = globalCentralPass
 }
 
-// â”€â”€ Maven publishing â€” POM metadata + publish target â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ————————————————————————————————————————————————————————————————————————————————————————————
 //
-// coordinates() is NOT called here â€” it lives in gradle/publish.gradle.kts which
+// coordinates() is NOT called here — it lives in gradle/publish.gradle.kts which
 // runs as part of each module's own evaluation (after plugin apply, before any
 // configure() reads/finalizes the groupId property).
 //
@@ -64,9 +46,9 @@ allprojects {
 subprojects {
     plugins.withId("com.vanniktech.maven.publish") {
         configure<MavenPublishBaseExtension> {
-            publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
-            signAllPublications()
-
+            // publishToMavenCentral() and signAllPublications() are configured
+            // via gradle.properties (SONATYPE_HOST, SONATYPE_AUTOMATIC_RELEASE,
+            // RELEASE_SIGNING_ENABLED) — vanniktech 0.33.0 reads them during apply().
             pom {
                 val artifactId =
                     if (project.name == "umbrella") "kmpworker"
@@ -111,6 +93,35 @@ subprojects {
         project.afterEvaluate {
             project.tasks.matching { it.name == "javaDocReleaseGeneration" }
                 .configureEach { enabled = false }
+
+            // Fix vanniktech staging directory URI on Windows.
+            // Java's File.absolutePath uses backslashes; vanniktech constructs the staging
+            // repo URI as "file://" + absolutePath which produces "file://C:\..." — invalid
+            // on Windows (needs "file:///C:/..."). Patch it here at execution time so
+            // Gradle's MavenResolver can resolve the URI to a File.
+            project.tasks.withType(PublishToMavenRepository::class.java).configureEach {
+                val pub = this  // capture PublishToMavenRepository before doFirst changes receiver
+                doFirst {
+                    val current = pub.repository.url
+                    val str = current.toString()
+                    if (str.startsWith("file:") && !str.startsWith("file:///")) {
+                        pub.repository.setUrl(
+                            URI("file:///" + str.removePrefix("file://").replace('\\', '/'))
+                        )
+                    }
+                }
+            }
+
+            // Add a pre-correct file:/// local Maven repository so we can publish
+            // signed artifacts without hitting the Windows staging URI bug in vanniktech.
+            // All publications already carry .asc artifacts (from signAllPublications());
+            // publishing to ANY Maven repo includes them automatically.
+            extensions.findByType(PublishingExtension::class.java)?.repositories {
+                maven {
+                    name = "LocalRelease"
+                    url = URI("file:///C:/kmpworker-release/")
+                }
+            }
         }
     }
 }
