@@ -61,9 +61,12 @@ class IOSTaskScheduler : TaskScheduler {
             is TaskType.ExactTime -> {
                 // BGAppRefreshTaskRequest with earliestBeginDate = best-effort exact on iOS.
                 // iOS guarantees it will NOT run BEFORE this date, but may delay further.
+                // NSDate().timeIntervalSince1970 is KN-compatible; System.currentTimeMillis() is JVM-only.
+                val runAtMillis = (request.type as TaskType.ExactTime).runAtMillis
+                val nowMillis = (NSDate().timeIntervalSince1970 * 1000.0).toLong()
+                val delaySeconds = maxOf(0.0, (runAtMillis - nowMillis) / 1000.0)
                 val taskRequest = BGAppRefreshTaskRequest(identifier = request.id).apply {
-                    val epochSeconds = request.type.let { it as TaskType.ExactTime }.runAtMillis / 1000.0
-                    earliestBeginDate = NSDate.dateWithTimeIntervalSince1970(epochSeconds)
+                    earliestBeginDate = NSDate.dateWithTimeIntervalSinceNow(delaySeconds)
                 }
                 submitRequest(taskRequest, request.id)
             }
