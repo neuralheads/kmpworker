@@ -46,6 +46,16 @@ jobs:
       # Note: wrapper-validation skipped — this is our own controlled repo.
       # The locally-generated gradle-wrapper.jar is trusted.
 
+      # Decode the base64 GPG key into an actual ASCII-armored PEM file.
+      # Storing multi-line secrets in GitHub causes newline issues; base64 avoids this.
+      - name: Decode signing key
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > /tmp/signing_key.asc
+          echo "DECODED_SIGNING_KEY<<EOF" >> $GITHUB_ENV
+          cat /tmp/signing_key.asc >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          rm /tmp/signing_key.asc
+
       - name: Publish to Maven Central
         run: >
           ./gradlew
@@ -55,9 +65,9 @@ jobs:
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          SIGNING_KEY:            ${{ secrets.SIGNING_KEY }}
+          SIGNING_KEY:            ${{ env.DECODED_SIGNING_KEY }}
           SIGNING_PASSWORD:       ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey:         ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey:         ${{ env.DECODED_SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_mavenCentralUsername:       ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword:       ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
