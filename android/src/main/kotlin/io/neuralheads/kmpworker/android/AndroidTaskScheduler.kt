@@ -76,6 +76,23 @@ class AndroidTaskScheduler(
                 )
             }
 
+            is TaskType.ExactTime -> {
+                // WorkManager doesn't support hard-exact scheduling — use setInitialDelay()
+                // which is battery-friendly and deferred to at least runAtMillis.
+                val delayMillis = maxOf(0L, type.runAtMillis - System.currentTimeMillis())
+                val builder = OneTimeWorkRequestBuilder<KmpTaskWorker>()
+                    .setInputData(inputData)
+                    .setConstraints(constraints)
+                    .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
+                request.tags.forEach { tag -> builder.addTag(tag) }
+                applyRetryPolicyToOneTime(builder, request.retryPolicy)
+                workManager.enqueueUniqueWork(
+                    request.id,
+                    ExistingWorkPolicy.REPLACE,
+                    builder.build()
+                )
+            }
+
             is TaskType.Periodic -> {
                 val workRequest = buildPeriodicRequest(
                     type.repeatIntervalMillis,

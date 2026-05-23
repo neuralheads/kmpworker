@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.Flow
 import platform.BackgroundTasks.BGAppRefreshTaskRequest
 import platform.BackgroundTasks.BGProcessingTaskRequest
 import platform.BackgroundTasks.BGTaskScheduler
+import platform.Foundation.NSDate
 import platform.Foundation.NSError
 
 /**
@@ -54,6 +55,16 @@ class IOSTaskScheduler : TaskScheduler {
         when (request.type) {
             is TaskType.OneTime -> {
                 val taskRequest = BGAppRefreshTaskRequest(identifier = request.id)
+                submitRequest(taskRequest, request.id)
+            }
+
+            is TaskType.ExactTime -> {
+                // BGAppRefreshTaskRequest with earliestBeginDate = best-effort exact on iOS.
+                // iOS guarantees it will NOT run BEFORE this date, but may delay further.
+                val taskRequest = BGAppRefreshTaskRequest(identifier = request.id).apply {
+                    val epochSeconds = request.type.let { it as TaskType.ExactTime }.runAtMillis / 1000.0
+                    earliestBeginDate = NSDate.dateWithTimeIntervalSince1970(epochSeconds)
+                }
                 submitRequest(taskRequest, request.id)
             }
 
