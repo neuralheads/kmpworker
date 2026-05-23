@@ -46,10 +46,20 @@ jobs:
       # Note: wrapper-validation skipped — this is our own controlled repo.
       # The locally-generated gradle-wrapper.jar is trusted.
 
-      # Decode the base64 GPG key. macOS uses BSD base64 (-D), not GNU base64 (--decode).
+      # Decode the base64 GPG key using Python (cross-platform: avoids BSD vs GNU base64 flags).
+      # Secret is passed via env var (not shell expansion) to avoid quoting/encoding issues.
       - name: Decode signing key
+        env:
+          SIGNING_KEY_B64: ${{ secrets.SIGNING_KEY }}
         run: |
-          echo "${{ secrets.SIGNING_KEY }}" | base64 -D > /tmp/signing_key.asc
+          python3 -c "
+import base64, os, sys
+b64 = os.environ.get('SIGNING_KEY_B64', '').strip()
+if not b64:
+    print('ERROR: SIGNING_KEY_B64 env var is empty', file=sys.stderr); sys.exit(1)
+decoded = base64.b64decode(b64).decode('utf-8')
+sys.stdout.write(decoded)
+" > /tmp/signing_key.asc
           echo "DECODED_SIGNING_KEY<<EOF" >> $GITHUB_ENV
           cat /tmp/signing_key.asc >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
