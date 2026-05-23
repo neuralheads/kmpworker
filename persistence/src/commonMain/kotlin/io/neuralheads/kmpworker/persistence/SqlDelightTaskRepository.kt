@@ -87,17 +87,22 @@ class SqlDelightTaskRepository(
     )
 
     private fun TaskType.toDbString(): String = when (this) {
-        is TaskType.OneTime  -> "OneTime"
-        is TaskType.Periodic -> "Periodic:${repeatIntervalMillis}"
+        is TaskType.OneTime   -> "OneTime"
+        is TaskType.Periodic  -> "Periodic:${repeatIntervalMillis}"
+        is TaskType.ExactTime -> "ExactTime:${runAtMillis}"
     }
 
-    private fun String.toTaskType(): TaskType {
-        return if (this == "OneTime") {
-            TaskType.OneTime
-        } else {
+    private fun String.toTaskType(): TaskType = when {
+        this == "OneTime"         -> TaskType.OneTime
+        startsWith("Periodic:")  -> {
             val interval = removePrefix("Periodic:").toLongOrNull() ?: 0L
             TaskType.Periodic(repeatIntervalMillis = interval)
         }
+        startsWith("ExactTime:") -> {
+            val runAt = removePrefix("ExactTime:").toLongOrNull() ?: 0L
+            TaskType.ExactTime(runAtMillis = runAt)
+        }
+        else -> TaskType.OneTime  // safe fallback for unknown future types
     }
 }
 
