@@ -5,7 +5,11 @@ build/
 
 # Local properties
 local.properties
+secrets.properties
+local.signing.properties
 *.properties
+# Never ignore Gradle wrapper properties
+!gradle/wrapper/gradle-wrapper.properties
 
 # Android Studio / IntelliJ IDEA
 .idea/
