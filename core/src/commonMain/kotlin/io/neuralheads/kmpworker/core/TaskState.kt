@@ -1,4 +1,4 @@
-﻿package io.neuralheads.kmpworker.core
+package io.neuralheads.kmpworker.core
 
 /**
  * Represents the current lifecycle state of a background task.
@@ -7,6 +7,7 @@
  * ```
  * [Scheduled] → [Running] → [Success]
  *                         ↘ [Failed]
+ *                         ↘ [TimedOut]   (task exceeded KmpWorkerConfig.taskTimeout)
  * [Scheduled] → [Cancelled]   (before execution begins)
  * ```
  */
@@ -40,14 +41,23 @@ sealed class TaskState {
      */
     data object Cancelled : TaskState()
 
+    /**
+     * Task exceeded the [KmpWorkerConfig.taskTimeout] duration and was stopped.
+     * No retry will occur after a timeout — treat the same as [Cancelled].
+     *
+     * @param afterMillis How many milliseconds the task ran before being timed out.
+     */
+    data class TimedOut(val afterMillis: Long) : TaskState()
+
     // ── Convenience properties ────────────────────────────────────────────────
 
-    /** True if the task is in a terminal state (Success, Failed without retry, or Cancelled). */
+    /** True if the task is in a terminal state (Success, Failed without retry, Cancelled, or TimedOut). */
     val isTerminal: Boolean get() = when (this) {
-        is Success -> true
+        is Success   -> true
         is Cancelled -> true
-        is Failed -> !willRetry
-        else -> false
+        is TimedOut  -> true
+        is Failed    -> !willRetry
+        else         -> false
     }
 
     /** True if the task is currently active (Scheduled or Running). */

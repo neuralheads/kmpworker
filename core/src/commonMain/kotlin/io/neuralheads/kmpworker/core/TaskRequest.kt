@@ -1,4 +1,4 @@
-﻿package io.neuralheads.kmpworker.core
+package io.neuralheads.kmpworker.core
 
 import kotlinx.serialization.Serializable
 
@@ -12,6 +12,8 @@ import kotlinx.serialization.Serializable
  * @param priority Execution priority hint. See [TaskPriority].
  * @param tags Optional set of string labels for group cancellation or filtering.
  * @param payload Optional serialized data passed to the task handler via [TaskExecutionContext.payload].
+ * @param label Optional human-readable display name for this task (used in logs and future
+ *   foreground-service notifications). Defaults to [id] if not set.
  */
 @Serializable
 data class TaskRequest(
@@ -21,5 +23,9 @@ data class TaskRequest(
     val retryPolicy: RetryPolicy = RetryPolicy.None,
     val priority: TaskPriority = TaskPriority.NORMAL,
     val tags: Set<String> = emptySet(),
-    val payload: String? = null
-)
+    val payload: String? = null,
+    val label: String? = null
+) {
+    /** Human-readable display name — falls back to [id] if [label] is not provided. */
+    val displayName: String get() = label ?: id
+}

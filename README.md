@@ -27,7 +27,7 @@ KMPWorker gives you a **single, platform-agnostic API** to schedule and execute 
 
 ## Installation
 
-> **Current version: `0.1.0-alpha03`**
+> **Current version: `0.1.0-beta01`**
 
 ### One import — everything included
 
@@ -36,7 +36,7 @@ KMPWorker gives you a **single, platform-agnostic API** to schedule and execute 
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker:0.1.0-alpha03")
+            implementation("com.neuralheads:kmpworker:0.1.0-beta01")
         }
     }
 }
@@ -48,18 +48,18 @@ kotlin {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker-core:0.1.0-alpha03")
+            implementation("com.neuralheads:kmpworker-core:0.1.0-beta01")
         }
         androidMain.dependencies {
-            implementation("com.neuralheads:kmpworker-android:0.1.0-alpha03")
+            implementation("com.neuralheads:kmpworker-android:0.1.0-beta01")
         }
         // Optional
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker-persistence:0.1.0-alpha03")
-            implementation("com.neuralheads:kmpworker-queue:0.1.0-alpha03")
+            implementation("com.neuralheads:kmpworker-persistence:0.1.0-beta01")
+            implementation("com.neuralheads:kmpworker-queue:0.1.0-beta01")
         }
         commonTest.dependencies {
-            implementation("com.neuralheads:kmpworker-testing:0.1.0-alpha03")
+            implementation("com.neuralheads:kmpworker-testing:0.1.0-beta01")
         }
     }
 }
@@ -442,13 +442,13 @@ fakeWorker.failureCount["upload"] = 2
 
 | Artifact | Version | Description |
 |----------|---------|-------------|
-| `com.neuralheads:kmpworker` | `0.1.0-alpha03` | ⭐ Umbrella — one import, everything |
-| `com.neuralheads:kmpworker-core` | `0.1.0-alpha03` | Core API, models, retry engine, task chaining |
-| `com.neuralheads:kmpworker-android` | `0.1.0-alpha03` | Android platform worker |
-| `com.neuralheads:kmpworker-persistence` | `0.1.0-alpha03` | SQLDelight task + event + chain storage |
-| `com.neuralheads:kmpworker-queue` | `0.1.0-alpha03` | Offline queue + `AndroidNetworkMonitor` + `IOSNetworkMonitor` |
-| `com.neuralheads:kmpworker-scheduler` | `0.1.0-alpha03` | `TaskScheduler` interface (advanced: build custom schedulers) |
-| `com.neuralheads:kmpworker-testing` | `0.1.0-alpha03` | `FakeKmpWorker` + `FakeNetworkMonitor` + `FakeTaskRepository` |
+| `com.neuralheads:kmpworker` | `0.1.0-beta01` | ⭐ Umbrella — one import, everything |
+| `com.neuralheads:kmpworker-core` | `0.1.0-beta01` | Core API, models, retry engine, task chaining |
+| `com.neuralheads:kmpworker-android` | `0.1.0-beta01` | Android platform worker |
+| `com.neuralheads:kmpworker-persistence` | `0.1.0-beta01` | SQLDelight task + event + chain storage |
+| `com.neuralheads:kmpworker-queue` | `0.1.0-beta01` | Offline queue + `AndroidNetworkMonitor` + `IOSNetworkMonitor` |
+| `com.neuralheads:kmpworker-scheduler` | `0.1.0-beta01` | `TaskScheduler` interface (advanced: build custom schedulers) |
+| `com.neuralheads:kmpworker-testing` | `0.1.0-beta01` | `FakeKmpWorker` + `FakeNetworkMonitor` + `FakeTaskRepository` |
 
 > `kmpworker-ios` is not a separate published artifact — iOS classes (`IOSKmpWorker`,
 > `IOSNetworkMonitor`, `IOSBackgroundDownloadWorker`) are compiled into the KMP `.klib`

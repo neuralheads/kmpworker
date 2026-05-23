@@ -1,5 +1,7 @@
 package io.neuralheads.kmpworker.core
 
+import kotlin.time.Duration
+
 /**
  * Global configuration for KMPWorker behaviour.
  *
@@ -30,7 +32,16 @@ data class KmpWorkerConfig(
     /**
      * Optional custom logger. If null, all log output is suppressed.
      */
-    val logger: KmpWorkerLogger.Logger? = null
+    val logger: KmpWorkerLogger.Logger? = null,
+
+    /**
+     * Maximum wall-clock time a single task execution may run before it is
+     * automatically cancelled and reported as [TaskState.TimedOut].
+     *
+     * Set to `null` (the default) to allow tasks to run indefinitely.
+     * Recommended value for network tasks: `Duration.seconds(30)`.
+     */
+    val taskTimeout: Duration? = null
 ) {
 
     companion object {
@@ -57,7 +68,8 @@ data class KmpWorkerConfig(
         var maxRetries: Int = base.maxRetries
         var logLevel: KmpWorkerLogger.Level = base.logLevel
         var logger: KmpWorkerLogger.Logger? = base.logger
+        var taskTimeout: Duration? = base.taskTimeout
 
-        fun build() = KmpWorkerConfig(maxRetries, logLevel, logger)
+        fun build() = KmpWorkerConfig(maxRetries, logLevel, logger, taskTimeout)
     }
 }

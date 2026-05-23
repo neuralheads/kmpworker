@@ -7,7 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.0-alpha01] — 2026-05-23
+## [0.1.0-beta01] — 2026-05-23 🎉 API Freeze
+
+> **Public API is now frozen.** No breaking changes will be made after this release.
+
+### Added
+- **`KmpWorkerException`** — structured exception hierarchy replacing raw `RuntimeException`:
+  - `TaskAlreadyEnqueuedException` — duplicate enqueue guard
+  - `TaskNotFoundException` — unknown task ID
+  - `TaskTimeoutException` — task exceeded configured timeout
+  - `ChainExecutionException` — step failure in a `TaskChain`
+  - `InvalidTaskRequestException` — malformed `TaskRequest`
+- **`TaskState.TimedOut(afterMillis)`** — new terminal state for timed-out tasks
+- **`KmpWorkerConfig.taskTimeout: Duration?`** — global max execution time per task
+- **`TaskRequest.label: String?`** — human-readable display name (future foreground service use)
+- **`TaskRequest.displayName`** — convenience property: `label ?: id`
+- **`Flow<TaskState>.onTimedOut { }`** — new Flow extension matching `TaskState.TimedOut`
+- **Instrumented test job** in CI — real Android emulator (API 34, KVM-accelerated)
+- **GitHub Pages docs workflow** — Dokka HTML deployed to `neuralheads.github.io/kmpworker`
+- **3 new guide docs**: `task-chaining.md`, `typed-payloads.md`, `testing.md`
+
+### Fixed
+- CI branch names corrected from `main` → `master`
+- Snapshot publish now requires all 4 test jobs to pass (lint + unit + instrumented + iOS)
+
+### Changed
+- `TaskState.isTerminal` now includes `TimedOut` alongside `Success`, `Cancelled`, `Failed`
+- `onTerminal { }` doc updated to reflect `TimedOut`
+
 
 ### Added
 - Core task API: `KmpWorker`, `TaskRequest`, `TaskType`, `TaskState`

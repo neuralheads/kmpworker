@@ -1,4 +1,4 @@
-﻿package io.neuralheads.kmpworker.core
+package io.neuralheads.kmpworker.core
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
@@ -34,9 +34,13 @@ fun Flow<TaskState>.onFailed(action: suspend (TaskState.Failed) -> Unit): Flow<T
 fun Flow<TaskState>.onCancelled(action: suspend () -> Unit): Flow<TaskState> =
     onEach { if (it is TaskState.Cancelled) action() }
 
-/** Invokes [action] when the task reaches any terminal state (Success, Failed without retry, Cancelled). */
+/** Invokes [action] when the task reaches any terminal state (Success, Failed without retry, Cancelled, or TimedOut). */
 fun Flow<TaskState>.onTerminal(action: suspend (TaskState) -> Unit): Flow<TaskState> =
     onEach { if (it.isTerminal) action(it) }
+
+/** Invokes [action] when the task is stopped due to exceeding [KmpWorkerConfig.taskTimeout]. */
+fun Flow<TaskState>.onTimedOut(action: suspend (TaskState.TimedOut) -> Unit): Flow<TaskState> =
+    onEach { if (it is TaskState.TimedOut) action(it) }
 
 /** Filters to only terminal states. */
 fun Flow<TaskState>.terminalStates(): Flow<TaskState> =
