@@ -23,6 +23,7 @@ import platform.BackgroundTasks.BGProcessingTaskRequest
 import platform.BackgroundTasks.BGTaskScheduler
 import platform.Foundation.NSDate
 import platform.Foundation.NSError
+import platform.posix.time as posixTime
 
 /**
  * iOS implementation of [TaskScheduler] backed by BGTaskScheduler.
@@ -59,14 +60,13 @@ class IOSTaskScheduler : TaskScheduler {
             }
 
             is TaskType.ExactTime -> {
-                // BGAppRefreshTaskRequest with earliestBeginDate = best-effort exact on iOS.
-                // iOS guarantees it will NOT run BEFORE this date, but may delay further.
-                // NSDate().timeIntervalSince1970 is KN-compatible; System.currentTimeMillis() is JVM-only.
+                // Compute delay using POSIX time (KN-safe; class methods on NSDate are not all bound).
+                // NSDate().dateByAddingTimeInterval() is an instance method — reliably available.
                 val runAtMillis = (request.type as TaskType.ExactTime).runAtMillis
-                val nowMillis = (NSDate().timeIntervalSince1970 * 1000.0).toLong()
-                val delaySeconds = maxOf(0.0, (runAtMillis - nowMillis) / 1000.0)
+                val nowSec  = posixTime(null).toLong()
+                val delaySec = maxOf(0.0, (runAtMillis / 1000L - nowSec).toDouble())
                 val taskRequest = BGAppRefreshTaskRequest(identifier = request.id).apply {
-                    earliestBeginDate = NSDate.dateWithTimeIntervalSinceNow(delaySeconds)
+                    earliestBeginDate = NSDate().dateByAddingTimeInterval(delaySec)
                 }
                 submitRequest(taskRequest, request.id)
             }
