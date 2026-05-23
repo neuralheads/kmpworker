@@ -3,13 +3,10 @@
 build/
 *.gradle.tmp
 
-# Local properties
+# Local/secret properties only (never commit credentials)
 local.properties
 secrets.properties
 local.signing.properties
-*.properties
-# Never ignore Gradle wrapper properties
-!gradle/wrapper/gradle-wrapper.properties
 
 # Android Studio / IntelliJ IDEA
 .idea/
