@@ -442,13 +442,13 @@ fakeWorker.failureCount["upload"] = 2
 
 | Artifact | Version | Description |
 |----------|---------|-------------|
-| `com.neuralheads:kmpworker` | `0.1.0-alpha02` | ⭐ Umbrella — one import, everything |
-| `com.neuralheads:kmpworker-core` | `0.1.0-alpha02` | Core API, models, retry engine, task chaining |
-| `com.neuralheads:kmpworker-android` | `0.1.0-alpha02` | Android platform worker |
-| `com.neuralheads:kmpworker-persistence` | `0.1.0-alpha02` | SQLDelight task + event + chain storage |
-| `com.neuralheads:kmpworker-queue` | `0.1.0-alpha02` | Offline queue + `AndroidNetworkMonitor` + `IOSNetworkMonitor` |
-| `com.neuralheads:kmpworker-scheduler` | `0.1.0-alpha02` | `TaskScheduler` interface (advanced: build custom schedulers) |
-| `com.neuralheads:kmpworker-testing` | `0.1.0-alpha02` | `FakeKmpWorker` + `FakeNetworkMonitor` + `FakeTaskRepository` |
+| `com.neuralheads:kmpworker` | `0.1.0-alpha03` | ⭐ Umbrella — one import, everything |
+| `com.neuralheads:kmpworker-core` | `0.1.0-alpha03` | Core API, models, retry engine, task chaining |
+| `com.neuralheads:kmpworker-android` | `0.1.0-alpha03` | Android platform worker |
+| `com.neuralheads:kmpworker-persistence` | `0.1.0-alpha03` | SQLDelight task + event + chain storage |
+| `com.neuralheads:kmpworker-queue` | `0.1.0-alpha03` | Offline queue + `AndroidNetworkMonitor` + `IOSNetworkMonitor` |
+| `com.neuralheads:kmpworker-scheduler` | `0.1.0-alpha03` | `TaskScheduler` interface (advanced: build custom schedulers) |
+| `com.neuralheads:kmpworker-testing` | `0.1.0-alpha03` | `FakeKmpWorker` + `FakeNetworkMonitor` + `FakeTaskRepository` |
 
 > `kmpworker-ios` is not a separate published artifact — iOS classes (`IOSKmpWorker`,
 > `IOSNetworkMonitor`, `IOSBackgroundDownloadWorker`) are compiled into the KMP `.klib`
@@ -458,15 +458,18 @@ fakeWorker.failureCount["upload"] = 2
 
 ## Version Roadmap
 
-| Version | Status | Features |
-|---------|--------|----------|
-| `0.1.0-alpha02` | **Current** | One-time tasks, periodic, retry, Flow monitoring, offline queue, persistence, task chaining, priorities, typed payloads |
-| `v0.2.0` | Planned | Foreground service support, progress reporting |
-| `v0.3.0` | Planned | Upload tasks, background downloads |
-| `v1.0.0` | Planned | Stable API, Dokka docs, production-ready iOS |
+| Version | Status | What's included |
+|---------|--------|-----------------|
+| `0.1.0-alpha01` | ✅ Released | Core API, WorkManager (Android), BGTaskScheduler (iOS), SQLDelight persistence, offline queue, task chaining, typed payloads, NSURLSession download bridge |
+| `0.1.0-alpha02` | ✅ Released | ProGuard/R8 consumer rules, `FakeNetworkMonitor`, `exponentialRetry()` / `linearRetry()` factories, retry bug fixes |
+| `0.1.0-alpha03` | ✅ **Current** | `OfflineQueue.executeNow` made suspend, `FakeKmpWorker.reset()` replay fix, `AndroidNetworkMonitor` cleanup, publish infrastructure |
+| `0.1.0-beta01` | 🔜 Coming next | Public API freeze, instrumented device tests, Dokka documentation |
+| `v0.2.0` | 📋 Planned | Foreground service support, progress reporting |
+| `v0.3.0` | 📋 Planned | Upload tasks, background downloads |
+| `v1.0.0` | 📋 Planned | Stable API, production-ready iOS, full docs |
 
-> **Note:** Task chaining (`TaskChain`, `enqueueChain`), task priorities (`TaskPriority`),
-> and typed payloads (`withPayload`, `decodePayload`) all ship in `0.1.0-alpha02`.
+> ✅ **Released** = live on Maven Central, usable right now.
+> 📋 **Planned** = not built yet — coming in a future release.
 
 ---
 
