@@ -64,7 +64,7 @@ allprojects {
 subprojects {
     plugins.withId("com.vanniktech.maven.publish") {
         configure<MavenPublishBaseExtension> {
-            publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+            publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
             signAllPublications()
 
             pom {
