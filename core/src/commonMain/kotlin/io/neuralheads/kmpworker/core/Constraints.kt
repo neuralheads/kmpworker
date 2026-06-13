@@ -23,5 +23,16 @@ data class Constraints(
     val requiresCharging: Boolean = false,
 
     /** Task should only run when battery level is not critically low. Android only. */
-    val batteryNotLow: Boolean = false
+    val batteryNotLow: Boolean = false,
+
+    /** Task should only run when the device is idle. Android only (API 23+). */
+    val requiresDeviceIdle: Boolean = false,
+
+    /**
+     * Content URIs to observe for changes. Android only.
+     * When any of these URIs change, the task will be triggered.
+     *
+     * Example: `contentUris = listOf("content://media/external/images/media")`
+     */
+    val contentUris: List<String> = emptyList()
 )

@@ -40,7 +40,7 @@ import platform.BackgroundTasks.BGTaskScheduler
  *
  * Internally registers handlers for every task ID in [TaskRegistry].
  * Each handler:
- * - Emits [TaskState.Running]
+ * - Emits [TaskState.Running()]
  * - Executes the registered suspend function
  * - Emits [TaskState.Success] or [TaskState.Failed]
  * - Sets task completion via [BGTask.setTaskCompletedWithSuccess]
@@ -71,7 +71,7 @@ object BackgroundInitializer {
     private fun handleTask(task: BGTask, taskId: String) {
         val job = scope.launch {
             try {
-                TaskMonitor.emit(taskId, TaskState.Running)
+                TaskMonitor.emit(taskId, TaskState.Running())
                 TaskRegistry.execute(taskId)
                 TaskMonitor.emit(taskId, TaskState.Success)
                 task.setTaskCompletedWithSuccess(true)

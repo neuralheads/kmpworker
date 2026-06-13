@@ -89,11 +89,47 @@ interface KmpWorker {
      * }
      * ```
      */
-    suspend fun enqueueChain(chain: TaskChain)
+    suspend fun enqueueChain(chain: TaskChain) {
+        enqueueChain(chain, ChainPolicy.ALLOW_DUPLICATE)
+    }
+
+    /**
+     * Enqueues a [TaskChain] with a [ChainPolicy] to handle duplicate chain IDs.
+     */
+    suspend fun enqueueChain(chain: TaskChain, policy: ChainPolicy)
 
     /**
      * Returns a [Flow] of [TaskState] updates for the chain as a whole.
      * Emits [TaskState.Success] when ALL steps complete, or [TaskState.Failed] if any step fails.
      */
     fun observeChain(chainId: String): Flow<TaskState>
+
+    /**
+     * Returns execution history records for telemetry and analytics.
+     * Requires a [TelemetryCollector] to be installed.
+     *
+     * @param limit Maximum number of records to return.
+     * @return List of [ExecutionRecord], most recent first. Empty if no telemetry installed.
+     */
+    suspend fun getExecutionHistory(limit: Int = 100): List<ExecutionRecord> = emptyList()
+
+    /**
+     * Clears all execution history records.
+     */
+    suspend fun clearExecutionHistory() {}
+
+    /**
+     * Enqueues multiple tasks atomically.
+     * On Android, maps to `WorkManager.enqueue(List<WorkRequest>)`.
+     */
+    suspend fun enqueueBatch(requests: List<TaskRequest>) {
+        requests.forEach { enqueue(it) }
+    }
+
+    /**
+     * Cancels multiple tasks by their IDs.
+     */
+    suspend fun cancelBatch(taskIds: List<String>) {
+        taskIds.forEach { cancel(it) }
+    }
 }

@@ -16,8 +16,19 @@ sealed class TaskState {
     /** Task has been accepted and queued for execution. */
     data object Scheduled : TaskState()
 
-    /** Task handler is currently executing. */
-    data object Running : TaskState()
+    /**
+     * Task handler is currently executing.
+     *
+     * Optionally carries progress information reported via
+     * [TaskExecutionContext.reportProgress].
+     *
+     * @param progress Percentage complete (0.0–1.0), or null if unknown.
+     * @param message Optional human-readable status message.
+     */
+    data class Running(
+        val progress: Float? = null,
+        val message: String? = null
+    ) : TaskState()
 
     /** Task completed successfully. */
     data object Success : TaskState()

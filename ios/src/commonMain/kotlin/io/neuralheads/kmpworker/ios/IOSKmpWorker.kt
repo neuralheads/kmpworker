@@ -1,7 +1,9 @@
 package io.neuralheads.kmpworker.ios
 
+import io.neuralheads.kmpworker.core.ChainPolicy
 import io.neuralheads.kmpworker.core.ChainRepository
 import io.neuralheads.kmpworker.core.EventStore
+import io.neuralheads.kmpworker.core.ExecutionRecord
 import io.neuralheads.kmpworker.core.KmpWorker
 import io.neuralheads.kmpworker.core.KmpWorkerLogger
 import io.neuralheads.kmpworker.core.TaskChain
@@ -11,6 +13,7 @@ import io.neuralheads.kmpworker.core.TaskMonitor
 import io.neuralheads.kmpworker.core.TaskRegistry
 import io.neuralheads.kmpworker.core.TaskRequest
 import io.neuralheads.kmpworker.core.TaskState
+import io.neuralheads.kmpworker.core.TelemetryCollector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,7 +58,8 @@ import kotlinx.coroutines.launch
  */
 class IOSKmpWorker(
     eventStore: EventStore? = null,
-    chainRepo: ChainRepository? = null
+    chainRepo: ChainRepository? = null,
+    private val telemetry: TelemetryCollector? = null
 ) : KmpWorker {
 
     private val appScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -115,11 +119,18 @@ class IOSKmpWorker(
         TaskRegistry.register(taskId, block)
     }
 
-    override suspend fun enqueueChain(chain: TaskChain) {
+    override suspend fun enqueueChain(chain: TaskChain, policy: ChainPolicy) {
         val executor = chainExecutor
             ?: error("enqueueChain() requires a ChainRepository. Pass chainRepo to IOSKmpWorker constructor.")
-        executor.execute(chain)
+        executor.execute(chain, policy)
     }
 
     override fun observeChain(chainId: String): Flow<TaskState> = TaskMonitor.observe(chainId)
+
+    override suspend fun getExecutionHistory(limit: Int): List<ExecutionRecord> =
+        telemetry?.getHistory(limit) ?: emptyList()
+
+    override suspend fun clearExecutionHistory() {
+        telemetry?.clearHistory()
+    }
 }

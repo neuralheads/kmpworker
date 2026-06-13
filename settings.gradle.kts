@@ -22,6 +22,7 @@ include(
     ":android",
     ":ios",
     ":queue",
+    ":transfer",
     ":testing",
     ":umbrella",
     ":sample"

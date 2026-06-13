@@ -93,3 +93,59 @@ fun exponentialRetry(
 fun linearRetry(delay: Duration): RetryPolicy.Linear {
     return RetryPolicy.Linear(delayMillis = delay.inWholeMilliseconds)
 }
+
+/**
+ * Builds and enqueues a [TaskChain] using a fluent DSL.
+ *
+ * ```kotlin
+ * kmpWorker.chain("onboarding") {
+ *     beginWith("fetch-profile")
+ *     then("process-data")
+ *     then("upload") {
+ *         constraints = Constraints(requiresInternet = true)
+ *     }
+ * }
+ * ```
+ *
+ * @param chainId Unique identifier for the chain.
+ * @param policy How to handle duplicate chain IDs. Defaults to [ChainPolicy.ALLOW_DUPLICATE].
+ * @param block DSL block to configure chain steps.
+ */
+suspend fun KmpWorker.chain(
+    chainId: String,
+    policy: ChainPolicy = ChainPolicy.ALLOW_DUPLICATE,
+    block: TaskChainBuilder.() -> Unit
+) {
+    val chain = TaskChainBuilder(chainId).apply(block).build()
+    enqueueChain(chain, policy)
+}
+
+/**
+ * Builds and executes a [TaskGraph] (DAG) using a fluent DSL.
+ *
+ * Independent nodes run in parallel; dependent nodes wait for all
+ * upstream dependencies to complete before starting.
+ *
+ * ```kotlin
+ * kmpWorker.graph("pipeline") {
+ *     val fetch = task("fetch-data")
+ *     val process = task("process")
+ *     val validate = task("validate")
+ *     val upload = task("upload")
+ *
+ *     fetch then process      // process depends on fetch
+ *     fetch then validate     // validate runs parallel with process
+ *     process then upload     // upload waits for BOTH
+ *     validate then upload
+ * }
+ * ```
+ */
+@ExperimentalKmpWorkerApi
+suspend fun KmpWorker.graph(
+    graphId: String,
+    block: TaskGraphBuilder.() -> Unit
+) {
+    val graph = TaskGraphBuilder(graphId).apply(block).build()
+    val executor = TaskGraphExecutor(this, kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default))
+    executor.execute(graph)
+}

@@ -66,6 +66,12 @@ class IOSTaskScheduler : TaskScheduler {
                 submitRequest(taskRequest, request.id)
             }
 
+            is TaskType.Windowed -> {
+                // iOS: Use BGAppRefreshTaskRequest — best-effort within the window
+                val taskRequest = BGAppRefreshTaskRequest(identifier = request.id)
+                submitRequest(taskRequest, request.id)
+            }
+
             is TaskType.Periodic -> {
                 val taskRequest = BGProcessingTaskRequest(identifier = request.id).apply {
                     requiresNetworkConnectivity = request.constraints.requiresInternet

@@ -1,0 +1,26 @@
+CREATE TABLE IF NOT EXISTS execution_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id TEXT NOT NULL,
+    started_at INTEGER NOT NULL,
+    completed_at INTEGER NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    state TEXT NOT NULL,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    error_msg TEXT
+);
+
+insertRecord:
+INSERT INTO execution_history (task_id, started_at, completed_at, duration_ms, state, retry_count, error_msg)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+getRecent:
+SELECT * FROM execution_history ORDER BY completed_at DESC LIMIT ?;
+
+getByState:
+SELECT * FROM execution_history WHERE state = ? ORDER BY completed_at DESC LIMIT ?;
+
+deleteAll:
+DELETE FROM execution_history;
+
+pruneOld:
+DELETE FROM execution_history WHERE completed_at < ?;

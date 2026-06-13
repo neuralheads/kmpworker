@@ -23,7 +23,7 @@ class TaskStateExtensionsTest {
 
     @Test
     fun `Running isTerminal is false`() {
-        assertFalse(TaskState.Running.isTerminal)
+        assertFalse(TaskState.Running().isTerminal)
     }
 
     @Test
@@ -50,7 +50,7 @@ class TaskStateExtensionsTest {
 
     @Test
     fun `Running isActive is true`() {
-        assertTrue(TaskState.Running.isActive)
+        assertTrue(TaskState.Running().isActive)
     }
 
     @Test

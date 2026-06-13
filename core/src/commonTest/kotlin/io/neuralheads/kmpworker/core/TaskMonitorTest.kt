@@ -12,9 +12,9 @@ class TaskMonitorTest {
         TaskMonitor.reset()
         val flow = TaskMonitor.observe("monitor-task")
 
-        TaskMonitor.emit("monitor-task", TaskState.Running)
+        TaskMonitor.emit("monitor-task", TaskState.Running())
         val state = flow.first()
-        assertEquals(TaskState.Running, state)
+        assertEquals(TaskState.Running(), state)
     }
 
     @Test
@@ -23,10 +23,10 @@ class TaskMonitorTest {
         val flowA = TaskMonitor.observe("task-a")
 
         TaskMonitor.emit("task-b", TaskState.Success)
-        TaskMonitor.emit("task-a", TaskState.Running)
+        TaskMonitor.emit("task-a", TaskState.Running())
 
         val state = flowA.first()
-        assertEquals(TaskState.Running, state)
+        assertEquals(TaskState.Running(), state)
     }
 
     @Test

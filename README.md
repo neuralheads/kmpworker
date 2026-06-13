@@ -1,72 +1,65 @@
 # KMPWorker
 
-> A reliability-first Kotlin Multiplatform background task library for Android & iOS — by **NeuralHeads**.
+> A reliability-first Kotlin Multiplatform background task library for Android & iOS.
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.neuralheads/kmpworker)](https://central.sonatype.com/artifact/com.neuralheads/kmpworker)
-[![CI](https://github.com/neuralheads/kmpworker/actions/workflows/ci.yml/badge.svg)](https://github.com/neuralheads/kmpworker/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
-[![Kotlin](https://img.shields.io/badge/kotlin-2.1.0-purple)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.1.21-purple)](https://kotlinlang.org)
 
 ---
 
-## What is KMPWorker?
+## Features
 
-KMPWorker gives you a **single, platform-agnostic API** to schedule and execute background tasks across Android and iOS — backed by WorkManager on Android and BGTaskScheduler on iOS.
-
-- ✅ One-time & periodic background tasks
-- ✅ Exponential / linear retry policies
-- ✅ Task state monitoring via `Flow`
-- ✅ SQLDelight-backed persistence (survives app restarts)
-- ✅ Offline queue with automatic replay on network restore
-- ✅ Task chaining — sequential steps with crash-safe resume
-- ✅ Group cancellation via tags
-- ✅ Execution context (retry count, payload, tags) delivered to handlers
-- ✅ Testing utilities with `FakeKmpWorker` — no WorkManager needed in tests
+- One-time, periodic, exact-time & windowed background tasks
+- Exponential / linear retry policies with public `RetryEngine`
+- Task state monitoring via `Flow` with 10 extension operators
+- Progress reporting from within task handlers
+- Task chaining with crash-safe resume + builder DSL
+- Task dependency graph (DAG) with parallel execution
+- Chain policies (KEEP / REPLACE / ALLOW_DUPLICATE)
+- Batch operations (enqueueBatch / cancelBatch)
+- Rate limiting with coroutine Semaphore
+- SQLDelight-backed persistence (survives app restarts)
+- Execution history & telemetry
+- Offline queue with automatic replay on network restore
+- HTTP download & upload (resume, SHA-256 checksum, progress)
+- Group cancellation via tags
+- Content URI triggers (Android)
+- Full constraint support (network, charging, battery, device idle)
+- Foreground service configuration (Android)
+- Swift interop helpers (FlowWrapper, TaskStateObserver)
+- Testing utilities — `FakeKmpWorker`, `FakeNetworkMonitor`, `FakeTaskRepository`
+- Android test rule — `KmpWorkerTestRule` for JUnit4
+- No Ktor dependency — pure platform APIs
+- ProGuard/R8 consumer rules included
 
 ---
 
 ## Installation
-
-> **Current version: `0.1.0-beta01`**
-
-### One import — everything included
 
 ```kotlin
 // build.gradle.kts (KMP shared module)
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker:0.1.0-beta01")
+            implementation("com.neuralheads:kmpworker:0.3.0")
+        }
+        // Android platform worker (required for androidMain)
+        androidMain.dependencies {
+            implementation("com.neuralheads:kmpworker-android-android:0.3.0")
         }
     }
 }
 ```
 
-### Fine-grained (pick only what you need)
+### Optional modules
 
 ```kotlin
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker-core:0.1.0-beta01")
-        }
-        androidMain.dependencies {
-            implementation("com.neuralheads:kmpworker-android:0.1.0-beta01")
-        }
-        // Optional
-        commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker-persistence:0.1.0-beta01")
-            implementation("com.neuralheads:kmpworker-queue:0.1.0-beta01")
-        }
-        commonTest.dependencies {
-            implementation("com.neuralheads:kmpworker-testing:0.1.0-beta01")
-        }
-    }
-}
-```
+// HTTP transfers (download/upload with resume & checksum)
+implementation("com.neuralheads:kmpworker-transfer:0.3.0")
 
-> **Note:** `kmpworker-ios` is a Kotlin/Native module included via the KMP metadata in `kmpworker-core`.
-> iOS targets are resolved automatically — no separate iOS dependency declaration is needed.
+// Testing (FakeKmpWorker + KmpWorkerTestRule)
+testImplementation("com.neuralheads:kmpworker-testing:0.3.0")
+```
 
 ---
 
@@ -76,72 +69,51 @@ All classes live under `io.neuralheads.kmpworker.*`:
 
 | Class | Package |
 |-------|---------|
-| `KmpWorker` | `io.neuralheads.kmpworker.core` |
-| `KmpWorkerBuilder` | `io.neuralheads.kmpworker.core` |
-| `TaskRequest` | `io.neuralheads.kmpworker.core` |
-| `TaskType` | `io.neuralheads.kmpworker.core` |
-| `TaskState` | `io.neuralheads.kmpworker.core` |
-| `RetryPolicy` | `io.neuralheads.kmpworker.core` |
-| `Constraints` | `io.neuralheads.kmpworker.core` |
-| `TaskExecutionContext` | `io.neuralheads.kmpworker.core` |
-| `TaskChain` | `io.neuralheads.kmpworker.core` |
-| `AndroidKmpWorker` | `io.neuralheads.kmpworker.android` |
-| `KmpWorkerAndroidLogger` | `io.neuralheads.kmpworker.android` |
-| `IOSKmpWorker` | `io.neuralheads.kmpworker.ios` |
-| `OfflineQueue` | `io.neuralheads.kmpworker.queue` |
-| `NetworkMonitor` | `io.neuralheads.kmpworker.queue` |
-| `AndroidNetworkMonitor` | `io.neuralheads.kmpworker.queue` |
-| `IOSNetworkMonitor` | `io.neuralheads.kmpworker.queue` |
-| `FakeKmpWorker` | `io.neuralheads.kmpworker.testing` |
+| `KmpWorker`, `TaskRequest`, `TaskState`, `TaskType` | `io.neuralheads.kmpworker.core` |
+| `RetryPolicy`, `RetryEngine`, `Constraints` | `io.neuralheads.kmpworker.core` |
+| `TaskChain`, `TaskChainBuilder`, `ChainPolicy` | `io.neuralheads.kmpworker.core` |
+| `TaskGraph`, `TaskGraphBuilder`, `TaskGraphExecutor` | `io.neuralheads.kmpworker.core` |
+| `RateLimiter`, `TelemetryCollector`, `ExecutionRecord` | `io.neuralheads.kmpworker.core` |
+| `AndroidKmpWorker`, `ForegroundConfig` | `io.neuralheads.kmpworker.android` |
+| `IOSKmpWorker`, `FlowWrapper`, `TaskStateObserver` | `io.neuralheads.kmpworker.ios` |
+| `OfflineQueue`, `NetworkMonitor` | `io.neuralheads.kmpworker.queue` |
+| `TransferManager`, `DownloadRequest`, `UploadRequest` | `io.neuralheads.kmpworker.transfer` |
+| `FakeKmpWorker`, `KmpWorkerTestRule` | `io.neuralheads.kmpworker.testing` |
 
 ---
 
 ## Quick Start
 
 ```kotlin
-import io.neuralheads.kmpworker.core.KmpWorker
-import io.neuralheads.kmpworker.core.TaskRequest
-import io.neuralheads.kmpworker.core.TaskType
-import io.neuralheads.kmpworker.core.RetryPolicy
-import io.neuralheads.kmpworker.core.Constraints
-
-// 1. Register your task handler at startup
+// 1. Register handler
 kmpWorker.register("sync-users") {
     repository.syncUsers()
 }
 
-// 2. Schedule it
+// 2. Schedule
 kmpWorker.enqueue(
     TaskRequest(
-        id          = "sync-users",
-        type        = TaskType.OneTime,
+        id = "sync-users",
+        type = TaskType.OneTime,
         constraints = Constraints(requiresInternet = true),
         retryPolicy = RetryPolicy.Exponential(initialDelayMillis = 5_000, maxRetries = 3)
     )
 )
 
-// 3. Observe state via Flow
+// 3. Observe
 kmpWorker.observe("sync-users")
+    .onRunning  { showSpinner() }
+    .onProgress { progress, msg -> updateBar(progress) }
     .onSuccess  { hideSpinner() }
     .onFailed   { error -> showError(error.throwable.message) }
-    .onRunning  { showSpinner() }
     .collect()
 ```
 
-### DSL shortcut (register + enqueue in one call)
+### DSL shortcuts
 
 ```kotlin
-import io.neuralheads.kmpworker.core.oneTime
-import io.neuralheads.kmpworker.core.periodic
-import io.neuralheads.kmpworker.core.exponentialRetry
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.Duration.Companion.hours
-
-kmpWorker.oneTime(
-    id          = "upload-logs",
-    retryPolicy = exponentialRetry(initialDelay = 5.seconds, maxRetries = 3)
-) {
-    logUploader.upload()
+kmpWorker.oneTime(id = "upload", retryPolicy = exponentialRetry(5.seconds, maxRetries = 3)) {
+    uploader.upload()
 }
 
 kmpWorker.periodic(id = "sync", repeatInterval = 6.hours) {
@@ -154,322 +126,314 @@ kmpWorker.periodic(id = "sync", repeatInterval = 6.hours) {
 ## Android Setup
 
 ```kotlin
-import io.neuralheads.kmpworker.android.AndroidKmpWorker
-import io.neuralheads.kmpworker.android.KmpWorkerAndroidLogger
-import io.neuralheads.kmpworker.core.KmpWorker
-import io.neuralheads.kmpworker.core.KmpWorkerBuilder
-import io.neuralheads.kmpworker.core.KmpWorkerLogger
-
 class MyApp : Application() {
     val kmpWorker: KmpWorker by lazy {
         KmpWorkerBuilder(
-            AndroidKmpWorker(context = this)
-            // Optional: add persistence for cold-launch replay:
-            // AndroidKmpWorker(context = this, eventStore = SqlDelightEventStore(db))
+            AndroidKmpWorker(
+                context = this,
+                telemetry = SqlDelightTelemetryCollector(database),  // optional
+                foregroundConfig = ForegroundConfig(                  // optional
+                    notificationTitle = "Syncing..."
+                )
+            )
         )
         .configure {
             logLevel = KmpWorkerLogger.Level.DEBUG
-            logger   = KmpWorkerAndroidLogger   // routes to android.util.Log
+            logger = KmpWorkerAndroidLogger
         }
-        .task("sync-users") { repository.sync() }
+        .task("sync") { repository.sync() }
         .build()
     }
 }
 ```
 
-WorkManager is pre-warmed automatically via Jetpack App Startup — no manual init required.
+WorkManager is initialized automatically via Jetpack App Startup.
 
 ---
 
 ## iOS Setup
 
-`IOSKmpWorker` is a Kotlin class callable from Swift via the compiled KMP framework.
-
 ```swift
-import kmpworker   // your compiled KMP framework name
+let kmpWorker = IOSKmpWorker()
 
-@main
-class AppDelegate: UIResponder, UIApplicationDelegate {
-
-    let kmpWorker = IOSKmpWorker()   // no-arg constructor; eventStore/chainRepo are optional
-
-    func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-        // Register handlers BEFORE calling initialize()
-        kmpWorker.register(taskId: "sync-users") {
-            // your task logic
-        }
-        // Registers all task IDs with BGTaskScheduler
-        kmpWorker.initialize()
-        return true
-    }
-
-    // Required for NSURLSession background downloads
-    func application(
-        _ application: UIApplication,
-        handleEventsForBackgroundURLSession identifier: String,
-        completionHandler: @escaping () -> Void
-    ) {
-        IOSBackgroundDownloadWorker.companion.handleBackgroundSession(
-            identifier: identifier,
-            completionHandler: completionHandler
-        )
-    }
+func application(_ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    kmpWorker.register(taskId: "sync") { /* ... */ }
+    kmpWorker.initialize()
+    return true
 }
 ```
 
-**Info.plist** — declare all task identifiers:
+**Info.plist:**
 ```xml
 <key>BGTaskSchedulerPermittedIdentifiers</key>
 <array>
-    <string>sync-users</string>
+    <string>sync</string>
 </array>
 ```
 
-> ⚠️ Apple controls when background tasks actually execute. See [docs/ios-limitations.md](docs/ios-limitations.md).
+### Swift Flow observation
+
+```swift
+let observer = TaskStateObserver(flow: kmpWorker.observe(taskId: "sync"))
+observer.onStateChange { state in
+    print("State: \(state)")
+}
+observer.stop()
+```
 
 ---
 
-## API Reference
-
-### `TaskType`
+## Task Types
 
 ```kotlin
-TaskType.OneTime                                    // run once, ASAP
-TaskType.Periodic(repeatIntervalMillis = 900_000L)  // repeat every 15 min
-TaskType.ExactTime(runAtMillis = epochMs)            // run at/after a specific time
+TaskType.OneTime                                        // run once ASAP
+TaskType.Periodic(repeatIntervalMillis = 900_000)       // every 15 min
+TaskType.ExactTime(runAtMillis = epochMs)                // at specific time
+TaskType.Windowed(earliestMillis = t1, latestMillis = t2) // within a window
 ```
 
-### `TaskRequest`
+## Constraints
 
 ```kotlin
-TaskRequest(
-    id          = "my-task",          // required — unique stable ID
-    type        = TaskType.OneTime,   // required
-    constraints = Constraints(
-        requiresInternet = true,      // wait for network
-        requiresCharging = false,     // wait for charger
-        batteryNotLow    = false      // wait for battery > threshold
-    ),
-    retryPolicy = RetryPolicy.Exponential(initialDelayMillis = 5_000, maxRetries = 3),
-    priority    = TaskPriority.HIGH,              // HIGH | NORMAL | LOW
-    tags        = setOf("upload", "user-data"),  // Set<String>, not List
-    payload     = """{ \"userId\": 42 }"""        // optional JSON string
+Constraints(
+    requiresInternet = true,
+    requiresCharging = false,
+    batteryNotLow = true,
+    requiresDeviceIdle = false,                           // Android only
+    contentUris = listOf("content://media/external/images") // Android only
 )
 ```
 
-### `RetryPolicy`
+---
+
+## Task Chaining
+
+### Constructor API
 
 ```kotlin
-RetryPolicy.None                                         // no retry (default)
-RetryPolicy.Linear(delayMillis = 3_000L)                 // fixed 3 s gap
-RetryPolicy.Exponential(initialDelayMillis = 5_000L,     // 5 s → 10 s → 20 s…
-                        maxRetries = 4)
-
-// Duration DSL helpers (import io.neuralheads.kmpworker.core.*)
-exponentialRetry(initialDelay = 5.seconds, maxRetries = 3)
-linearRetry(delay = 2.seconds)
-```
-
-### `KmpWorker` interface
-
-| Method | Description |
-|--------|-------------|
-| `enqueue(request)` | Schedule a background task |
-| `cancel(taskId)` | Cancel a task by ID |
-| `cancelByTag(tag)` | Cancel all tasks sharing a tag |
-| `observe(taskId)` | `Flow<TaskState>` for one task |
-| `observeAll()` | `Flow<Pair<String, TaskState>>` for all tasks |
-| `register(taskId, block)` | Register a no-context handler |
-| `registerWithContext(taskId, block)` | Register a handler receiving `TaskExecutionContext` |
-| `enqueueChain(chain)` | Schedule a sequential `TaskChain` |
-| `observeChain(chainId)` | `Flow<TaskState>` for a chain |
-
-### `TaskState` — Flow extensions
-
-```kotlin
-import io.neuralheads.kmpworker.core.onSuccess
-import io.neuralheads.kmpworker.core.onFailed
-import io.neuralheads.kmpworker.core.onRunning
-import io.neuralheads.kmpworker.core.onCancelled
-
-kmpWorker.observe("sync-users")
-    .onRunning  { showSpinner() }
-    .onSuccess  { hideSpinner() }
-    .onFailed   { error -> showError(error.throwable.message) }
-    .onCancelled { hide() }
-    .collect()
-
-// Additional extension functions:
-// .onTerminal { state -> }           — Success, Cancelled, or final Failed
-// .terminalStates()                  — filters to terminal states only
-// .failures()                        — Flow<TaskState.Failed>
-// .successes()                       — Flow<TaskState.Success>
-```
-
-### Typed Payloads
-
-Send and receive strongly-typed data with your tasks — no manual JSON needed:
-
-```kotlin
-import io.neuralheads.kmpworker.core.withPayload
-import io.neuralheads.kmpworker.core.decodePayload
-
-@Serializable
-data class SyncData(val userId: String, val forceRefresh: Boolean = false)
-
-// Attach payload
-kmpWorker.enqueue(
-    TaskRequest(id = "sync-user", type = TaskType.OneTime)
-        .withPayload(SyncData(userId = "u-123"))
-)
-
-// Decode inside handler
-kmpWorker.registerWithContext("sync-user") {
-    val data = decodePayload<SyncData>() ?: return@registerWithContext
-    repository.sync(data.userId, forceRefresh = data.forceRefresh)
-}
-```
-
-### Task Chaining
-
-Execute tasks sequentially — each step only runs after the previous one succeeds. Progress is persisted so chains resume correctly after app termination:
-
-```kotlin
-import io.neuralheads.kmpworker.core.TaskChain
-
 val chain = TaskChain(
-    id    = "onboarding-flow",
+    id = "onboarding",
     steps = listOf(
-        TaskRequest(id = "step-fetch-profile",  type = TaskType.OneTime),
-        TaskRequest(id = "step-upload-avatar",  type = TaskType.OneTime),
-        TaskRequest(id = "step-notify-server",  type = TaskType.OneTime)
+        TaskRequest(id = "fetch-profile", type = TaskType.OneTime),
+        TaskRequest(id = "upload-avatar", type = TaskType.OneTime),
+        TaskRequest(id = "notify-server", type = TaskType.OneTime)
     )
 )
+kmpWorker.enqueueChain(chain, ChainPolicy.REPLACE)
+```
 
-kmpWorker.enqueueChain(chain)
+### Builder DSL
 
-kmpWorker.observeChain("onboarding-flow").collect { state ->
-    when (state) {
-        is TaskState.Success -> println("All steps complete")
-        is TaskState.Failed  -> println("Chain failed: ${state.throwable.message}")
-        else -> {}
+```kotlin
+kmpWorker.chain("onboarding", policy = ChainPolicy.REPLACE) {
+    beginWith("fetch-profile")
+    then("upload-avatar") {
+        constraints = Constraints(requiresInternet = true)
+    }
+    then("notify-server") {
+        retryPolicy = RetryPolicy.Exponential(5_000, 3)
     }
 }
 ```
 
-> Chaining requires a `ChainRepository` passed to the platform worker constructor:
-> `AndroidKmpWorker(context, chainRepo = SqlDelightChainRepository(db))`
+### Chain Policies
+
+| Policy | Behavior |
+|--------|----------|
+| `KEEP` | Skip if chain ID already running |
+| `REPLACE` | Cancel existing, start new |
+| `ALLOW_DUPLICATE` | Always enqueue (default) |
+
+---
+
+## Task Dependency Graph (DAG)
+
+Execute tasks with complex dependencies — independent nodes run in parallel:
+
+```kotlin
+@OptIn(ExperimentalKmpWorkerApi::class)
+kmpWorker.graph("pipeline") {
+    val fetch = task("fetch-data")
+    val process = task("process")
+    val validate = task("validate")
+    val upload = task("upload")
+
+    fetch then process      // process depends on fetch
+    fetch then validate     // validate runs PARALLEL with process
+    process then upload     // upload waits for BOTH
+    validate then upload
+}
+```
+
+---
+
+## Progress Reporting
+
+```kotlin
+kmpWorker.registerWithContext("upload") {
+    for (i in 0..100 step 10) {
+        reportProgress(i / 100f, "Uploading chunk $i")
+        delay(500)
+    }
+}
+
+kmpWorker.observe("upload")
+    .onProgress { progress, message -> updateBar(progress) }
+    .collect()
+```
+
+---
+
+## Batch Operations
+
+```kotlin
+kmpWorker.enqueueBatch(listOf(
+    TaskRequest("task-1", TaskType.OneTime),
+    TaskRequest("task-2", TaskType.OneTime),
+    TaskRequest("task-3", TaskType.OneTime)
+))
+
+kmpWorker.cancelBatch(listOf("task-1", "task-2", "task-3"))
+```
+
+---
+
+## Rate Limiting
+
+```kotlin
+@OptIn(ExperimentalKmpWorkerApi::class)
+val limiter = RateLimiter(maxConcurrent = 3)
+
+limiter.withPermit {
+    // At most 3 tasks execute concurrently
+    doHeavyWork()
+}
+```
+
+---
+
+## Execution History & Telemetry
+
+```kotlin
+val worker = AndroidKmpWorker(
+    context = this,
+    telemetry = SqlDelightTelemetryCollector(database)
+)
+
+// Query history
+val records = worker.getExecutionHistory(limit = 50)
+records.forEach { println("${it.taskId}: ${it.state} (${it.durationMs}ms)") }
+
+// Clear
+worker.clearExecutionHistory()
+```
+
+---
+
+## HTTP Transfers
+
+No Ktor required — uses `HttpURLConnection` (Android) and `NSURLSession` (iOS):
+
+```kotlin
+val manager = AndroidTransferManager() // or IOSTransferManager()
+
+manager.download(DownloadRequest(
+    id = "large-file",
+    url = "https://example.com/file.zip",
+    savePath = "/downloads/file.zip",
+    expectedChecksum = "sha256:abc123...",
+    resumable = true
+))
+
+manager.observeProgress("large-file").collect { progress ->
+    println("${progress.percentComplete}%")
+}
+
+manager.upload(UploadRequest(
+    id = "backup",
+    url = "https://api.example.com/upload",
+    filePath = "/data/backup.zip"
+))
+```
 
 ---
 
 ## Offline Queue
 
 ```kotlin
-import io.neuralheads.kmpworker.queue.OfflineQueue
-import io.neuralheads.kmpworker.queue.AndroidNetworkMonitor  // Android
-import io.neuralheads.kmpworker.queue.IOSNetworkMonitor       // iOS (iOS 12+, uses NWPathMonitor)
-import io.neuralheads.kmpworker.persistence.TaskRepository
-
-// Requires all 3 parameters
 val queue = OfflineQueue(
-    worker         = kmpWorker,
-    repository     = SqlDelightTaskRepository(database),  // from kmpworker-persistence
-    networkMonitor = AndroidNetworkMonitor(context)        // or IOSNetworkMonitor()
+    worker = kmpWorker,
+    repository = SqlDelightTaskRepository(database),
+    networkMonitor = AndroidNetworkMonitor(context) // or IOSNetworkMonitor()
 )
 queue.start()
 
 queue.enqueue(request)
-// → Online:  executes immediately
-// → Offline: persists to SQLDelight, replays automatically on reconnect
-
-// Manual replay (e.g., on app foreground)
-scope.launch { queue.replay() }
-
-// Check pending count
-val pending: Int = queue.pendingCount()
+// Online: executes immediately
+// Offline: persists, replays on reconnect
 ```
 
 ---
 
 ## Testing
 
-Add to your test dependencies:
-
 ```kotlin
-commonTest.dependencies {
-    implementation("com.neuralheads:kmpworker-testing:0.1.0-alpha02")
+// Unit tests with FakeKmpWorker
+val fake = FakeKmpWorker()
+fake.register("sync") { repository.sync() }
+fake.enqueue(TaskRequest("sync", TaskType.OneTime))
+assertEquals(TaskState.Success, fake.lastStateFor("sync"))
+
+// Simulate failures
+fake.failureCount["upload"] = 2  // fails 2x, succeeds on 3rd
+
+// Android instrumented tests
+class MyWorkerTest {
+    @get:Rule
+    val rule = KmpWorkerTestRule()
+
+    @Test
+    fun testSync() = runTest {
+        rule.worker.register("sync") { /* ... */ }
+        rule.worker.enqueue(TaskRequest("sync", TaskType.OneTime))
+        assertEquals(TaskState.Success, rule.worker.lastStateFor("sync"))
+    }
 }
 ```
 
-```kotlin
-import io.neuralheads.kmpworker.testing.FakeKmpWorker
-import io.neuralheads.kmpworker.core.TaskRequest
-import io.neuralheads.kmpworker.core.TaskType
-import io.neuralheads.kmpworker.core.TaskState
+---
 
-val fakeWorker = FakeKmpWorker()
+## Flow Extensions
 
-fakeWorker.register("sync") { repository.sync() }
-fakeWorker.enqueue(TaskRequest(id = "sync", type = TaskType.OneTime))
-
-assertEquals(TaskState.Success, fakeWorker.lastStateFor("sync"))
-
-// Simulate failures — fail 2 times, then succeed on the 3rd attempt
-fakeWorker.failureCount["upload"] = 2
-```
-
-### `FakeKmpWorker` inspection properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `enqueuedTasks` | `List<TaskRequest>` | All tasks passed to `enqueue()` |
-| `cancelledTasks` | `List<String>` | Task IDs passed to `cancel()` |
-| `cancelledTags` | `List<String>` | Tags passed to `cancelByTag()` |
-| `failureCount` | `MutableMap<String, Int>` | Simulate N failures before success |
-| `lastStateFor(id)` | `TaskState?` | Last emitted state for a task |
-| `allStatesFor(id)` | `List<TaskState>` | Full state history for a task |
-| `wasEnqueued(id)` | `Boolean` | Whether the task was enqueued |
-| `wasCancelled(id)` | `Boolean` | Whether the task was cancelled |
-| `executionCountFor(id)` | `Int` | How many times the task ran |
-| `reset()` | — | Clears all state between tests |
+| Extension | Description |
+|-----------|-------------|
+| `.onRunning { }` | Task is executing |
+| `.onSuccess { }` | Task completed |
+| `.onFailed { error -> }` | Task failed |
+| `.onCancelled { }` | Task was cancelled |
+| `.onTimedOut { timeout -> }` | Task exceeded timeout |
+| `.onTerminal { state -> }` | Any terminal state |
+| `.onProgress { progress, msg -> }` | Progress reported |
+| `.terminalStates()` | Filter to terminal only |
+| `.failures()` | Filter to `Failed` only |
+| `.successes()` | Filter to `Success` only |
+| `.progressUpdates()` | Filter to `Running` with progress |
 
 ---
 
-## Published Artifacts
+## Published Modules
 
-| Artifact | Version | Description |
-|----------|---------|-------------|
-| `com.neuralheads:kmpworker` | `0.1.0-beta01` | ⭐ Umbrella — one import, everything |
-| `com.neuralheads:kmpworker-core` | `0.1.0-beta01` | Core API, models, retry engine, task chaining |
-| `com.neuralheads:kmpworker-android` | `0.1.0-beta01` | Android platform worker |
-| `com.neuralheads:kmpworker-persistence` | `0.1.0-beta01` | SQLDelight task + event + chain storage |
-| `com.neuralheads:kmpworker-queue` | `0.1.0-beta01` | Offline queue + `AndroidNetworkMonitor` + `IOSNetworkMonitor` |
-| `com.neuralheads:kmpworker-scheduler` | `0.1.0-beta01` | `TaskScheduler` interface (advanced: build custom schedulers) |
-| `com.neuralheads:kmpworker-testing` | `0.1.0-beta01` | `FakeKmpWorker` + `FakeNetworkMonitor` + `FakeTaskRepository` |
-
-> `kmpworker-ios` is not a separate published artifact — iOS classes (`IOSKmpWorker`,
-> `IOSNetworkMonitor`, `IOSBackgroundDownloadWorker`) are compiled into the KMP `.klib`
-> and resolved automatically from `kmpworker-core`.
-
----
-
-## Version Roadmap
-
-| Version | Status | What's included |
-|---------|--------|-----------------|
-| `0.1.0-alpha01` | ✅ Released | Core API, WorkManager (Android), BGTaskScheduler (iOS), SQLDelight persistence, offline queue, task chaining, typed payloads, NSURLSession download bridge |
-| `0.1.0-alpha02` | ✅ Released | ProGuard/R8 consumer rules, `FakeNetworkMonitor`, `exponentialRetry()` / `linearRetry()` factories, retry bug fixes |
-| `0.1.0-alpha03` | ✅ **Current** | `OfflineQueue.executeNow` made suspend, `FakeKmpWorker.reset()` replay fix, `AndroidNetworkMonitor` cleanup, publish infrastructure |
-| `0.1.0-beta01` | 🔜 Coming next | Public API freeze, instrumented device tests, Dokka documentation |
-| `v0.2.0` | 📋 Planned | Foreground service support, progress reporting |
-| `v0.3.0` | 📋 Planned | Upload tasks, background downloads |
-| `v1.0.0` | 📋 Planned | Stable API, production-ready iOS, full docs |
-
-> ✅ **Released** = live on Maven Central, usable right now.
-> 📋 **Planned** = not built yet — coming in a future release.
+| Module | Description |
+|--------|-------------|
+| `kmpworker` | Umbrella — includes everything |
+| `kmpworker-core` | Core API, models, retry, chains, DAG |
+| `kmpworker-android` | WorkManager integration |
+| `kmpworker-persistence` | SQLDelight storage + telemetry |
+| `kmpworker-queue` | Offline queue + network monitors |
+| `kmpworker-transfer` | HTTP download/upload (no Ktor) |
+| `kmpworker-testing` | FakeKmpWorker + test rule |
+| `kmpworker-scheduler` | TaskScheduler interface |
 
 ---
 
@@ -477,22 +441,17 @@ fakeWorker.failureCount["upload"] = 2
 
 | Tool | Version |
 |------|---------|
-| Kotlin | 2.1.0+ |
-| Android `minSdk` | 23 |
-| Android `compileSdk` | 35 |
-| iOS targets | `iosX64`, `iosArm64`, `iosSimulatorArm64` |
-| Gradle | 8.x |
+| Kotlin | 2.1.21+ |
+| Android minSdk | 23 |
+| Android compileSdk | 35 |
+| iOS | iosX64, iosArm64, iosSimulatorArm64 |
+| Gradle | 9.x |
 
 ---
 
 ## License
 
 ```
-Copyright 2024 NeuralHeads
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
+Copyright 2026 NeuralHeads
+Licensed under the Apache License, Version 2.0
 ```

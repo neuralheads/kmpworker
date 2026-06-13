@@ -19,7 +19,7 @@ import io.neuralheads.kmpworker.core.TaskState
  * Lifecycle per execution:
  * 1. Reads taskId + retry policy from [inputData]
  * 2. Checks if max retries exhausted — returns [Result.failure] if so
- * 3. Emits [TaskState.Running]
+ * 3. Emits [TaskState.Running()]
  * 4. Builds [TaskExecutionContext] with taskId, retryCount, payload, tags
  * 5. Invokes registered handler via [TaskRegistry.execute]
  * 6. Success → emits [TaskState.Success] → returns [Result.success]
@@ -75,8 +75,12 @@ class KmpTaskWorker(
             return Result.failure()
         }
 
+        val startTime = System.currentTimeMillis()
+        // Record telemetry start
+        TelemetryBridge.collector?.onTaskStarted(taskId, startTime)
+
         return try {
-            TaskMonitor.emit(taskId, TaskState.Running)
+            TaskMonitor.emit(taskId, TaskState.Running())
 
             val ctx = TaskExecutionContext(
                 taskId = taskId,
@@ -88,16 +92,15 @@ class KmpTaskWorker(
 
             TaskMonitor.emit(taskId, TaskState.Success)
             KmpWorkerLogger.i("KmpTaskWorker: '$taskId' succeeded")
+            TelemetryBridge.collector?.onTaskCompleted(taskId, TaskState.Success, System.currentTimeMillis(), retryCount)
             Result.success()
 
         } catch (e: Exception) {
             val willRetry = RetryEngine.shouldRetry(retryCount, retryPolicy)
+            val failedState = TaskState.Failed(throwable = e, retryCount = retryCount, willRetry = willRetry)
             KmpWorkerLogger.e("KmpTaskWorker: '$taskId' failed (willRetry=$willRetry)", e)
-            TaskMonitor.emit(taskId, TaskState.Failed(
-                throwable = e,
-                retryCount = retryCount,
-                willRetry = willRetry
-            ))
+            TaskMonitor.emit(taskId, failedState)
+            TelemetryBridge.collector?.onTaskCompleted(taskId, failedState, System.currentTimeMillis(), retryCount)
             if (willRetry) Result.retry() else Result.failure()
         }
     }

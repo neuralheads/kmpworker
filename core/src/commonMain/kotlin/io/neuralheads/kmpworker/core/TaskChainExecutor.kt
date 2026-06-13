@@ -35,7 +35,23 @@ class TaskChainExecutor(
      * Starts executing [chain] from step 0.
      * Registers an internal observer that advances steps on success.
      */
-    suspend fun execute(chain: TaskChain) {
+    suspend fun execute(chain: TaskChain, policy: ChainPolicy = ChainPolicy.ALLOW_DUPLICATE) {
+        // Apply chain policy
+        val existing = chainRepository.get(chain.id)
+        if (existing != null && existing.status == "RUNNING") {
+            when (policy) {
+                ChainPolicy.KEEP -> {
+                    KmpWorkerLogger.i("TaskChainExecutor: chain '${chain.id}' already running, KEEP policy — skipping")
+                    return
+                }
+                ChainPolicy.REPLACE -> {
+                    KmpWorkerLogger.i("TaskChainExecutor: chain '${chain.id}' already running, REPLACE policy — cancelling old")
+                    cancel(chain)
+                }
+                ChainPolicy.ALLOW_DUPLICATE -> { /* proceed */ }
+            }
+        }
+
         KmpWorkerLogger.i("TaskChainExecutor: starting chain '${chain.id}' (${chain.totalSteps} steps)")
 
         // Persist initial chain state before enqueueing anything

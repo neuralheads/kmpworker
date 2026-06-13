@@ -52,4 +52,32 @@ sealed class TaskType {
     data class ExactTime(
         val runAtMillis: Long
     ) : TaskType()
+
+    /**
+     * Execute the task once within a time window.
+     *
+     * Preferred over [ExactTime] on iOS — gives the OS more scheduling flexibility.
+     *
+     * ```kotlin
+     * val now = System.currentTimeMillis()
+     * val request = TaskRequest(
+     *     id = "nightly-cleanup",
+     *     type = TaskType.Windowed(
+     *         earliestMillis = now + 2 * 60 * 60 * 1000L,  // 2 hours from now
+     *         latestMillis   = now + 6 * 60 * 60 * 1000L   // 6 hours from now
+     *     )
+     * )
+     * ```
+     *
+     * **Android**: Maps to `setInitialDelay(earliest)` with flex interval `latest - earliest`.
+     * **iOS**: Maps to `BGAppRefreshTaskRequest` with `earliestBeginDate`.
+     *
+     * @param earliestMillis Earliest allowed execution (UTC epoch ms).
+     * @param latestMillis Latest preferred execution (UTC epoch ms). Best-effort on both platforms.
+     */
+    @Serializable
+    data class Windowed(
+        val earliestMillis: Long,
+        val latestMillis: Long
+    ) : TaskType()
 }

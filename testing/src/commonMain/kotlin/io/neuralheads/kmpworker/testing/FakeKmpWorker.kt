@@ -1,5 +1,7 @@
 package io.neuralheads.kmpworker.testing
 
+import io.neuralheads.kmpworker.core.ChainPolicy
+import io.neuralheads.kmpworker.core.ExecutionRecord
 import io.neuralheads.kmpworker.core.KmpWorker
 import io.neuralheads.kmpworker.core.TaskChain
 import io.neuralheads.kmpworker.core.TaskExecutionContext
@@ -71,7 +73,7 @@ class FakeKmpWorker : KmpWorker {
         val attempts = executionCount[request.id] ?: 0
         executionCount[request.id] = attempts + 1
 
-        emitState(request.id, TaskState.Running)
+        emitState(request.id, TaskState.Running())
 
         if (attempts < failTimes) {
             val error = Exception("Simulated failure (attempt ${attempts + 1} of $failTimes)")
@@ -135,7 +137,7 @@ class FakeKmpWorker : KmpWorker {
      * Ideal for unit tests — each step runs immediately and synchronously.
      * Chain-level Success/Failed states are emitted to both [states] and [TaskMonitor].
      */
-    override suspend fun enqueueChain(chain: TaskChain) {
+    override suspend fun enqueueChain(chain: TaskChain, policy: ChainPolicy) {
         emitState(chain.id, TaskState.Scheduled)
         for ((index, step) in chain.steps.withIndex()) {
             // stepRequest() is internal to :core — inline its effect:
