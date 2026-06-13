@@ -5,6 +5,8 @@ import io.neuralheads.kmpworker.core.TaskState
 import io.neuralheads.kmpworker.core.TelemetryCollector
 import io.neuralheads.kmpworker.persistence.db.KmpWorkerDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -29,9 +31,10 @@ class SqlDelightTelemetryCollector(
 
     private val queries get() = database.execution_historyQueries
     private val startTimes = mutableMapOf<String, Long>()
+    private val mutex = Mutex()
 
     override suspend fun onTaskStarted(taskId: String, timestamp: Long) {
-        startTimes[taskId] = timestamp
+        mutex.withLock { startTimes[taskId] = timestamp }
     }
 
     override suspend fun onTaskCompleted(
@@ -40,7 +43,7 @@ class SqlDelightTelemetryCollector(
         timestamp: Long,
         retryCount: Int
     ): Unit = withContext(Dispatchers.Default) {
-        val startedAt = startTimes.remove(taskId) ?: timestamp
+        val startedAt = mutex.withLock { startTimes.remove(taskId) } ?: timestamp
         val durationMs = timestamp - startedAt
         val stateStr = when (state) {
             is TaskState.Success -> "SUCCESS"

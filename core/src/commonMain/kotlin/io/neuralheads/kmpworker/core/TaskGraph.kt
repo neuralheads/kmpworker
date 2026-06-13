@@ -2,9 +2,9 @@ package io.neuralheads.kmpworker.core
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 /**
  * A directed acyclic graph (DAG) of tasks with dependency edges.
@@ -109,24 +109,25 @@ class TaskGraphExecutor(
                 return
             }
 
-            // Execute ready nodes in parallel
-            coroutineScope {
-                for (nodeId in ready) {
-                    launch {
+            // Execute ready nodes in parallel, collect results after all finish
+            val results = coroutineScope {
+                ready.map { nodeId ->
+                    async {
                         val request = graph.nodes.first { it.id == nodeId }
                         try {
                             worker.enqueue(request)
                             val state = worker.observe(nodeId).first { it.isTerminal }
-                            if (state is TaskState.Success) {
-                                completed.add(nodeId)
-                            } else {
-                                failed.add(nodeId)
-                            }
+                            nodeId to (state is TaskState.Success)
                         } catch (e: Exception) {
-                            failed.add(nodeId)
+                            nodeId to false
                         }
                     }
-                }
+                }.map { it.await() }
+            }
+
+            // Process results on single thread — no data race
+            for ((nodeId, success) in results) {
+                if (success) completed.add(nodeId) else failed.add(nodeId)
             }
 
             remaining.removeAll(completed)
