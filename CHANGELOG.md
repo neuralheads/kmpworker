@@ -7,7 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0-beta02] — 2026-06-14
+
+### Added (contributed by [@muhammadsobananjum](https://github.com/muhammadsobananjum) via [#1](https://github.com/neuralheads/kmpworker/pull/1))
+- **`TaskGraph` + `TaskGraphExecutor`** — DAG-based parallel task execution with dependency edges
+- **`TelemetryCollector`** interface + **`SqlDelightTelemetryCollector`** — persistent execution history (timing, retries, errors)
+- **`ExecutionRecord`** — data class for telemetry records; queryable via `getExecutionHistory()`
+- **`RateLimiter`** — semaphore-based concurrency cap for task execution
+- **`ChainPolicy`** — `KEEP` / `REPLACE` / `ALLOW_DUPLICATE` for chain deduplication
+- **`TaskType.Windowed`** — execute within a time window (maps to flex interval on Android, `earliestBeginDate` on iOS)
+- **`Constraints.requiresDeviceIdle`** — device idle constraint (Android API 23+)
+- **`Constraints.contentUris`** — content URI change triggers for Android tasks
+- **`ForegroundConfig`** — foreground service notification config for high-priority Android tasks
+- **`FlowWrapper<T>`** + **`TaskStateObserver`** — Swift-friendly callback wrapper for Kotlin Flows
+- **`:transfer` module** — background file download/upload via native HTTP (no Ktor):
+  - `TransferManager` interface with `download()`, `upload()`, `observeProgress()`
+  - `DownloadRequest` — URL, save path, checksum verification, resume support
+  - `UploadRequest` — file path, HTTP method, headers
+  - `TransferProgress` — bytes transferred, total, percent complete
+  - SHA-256 checksum verification (`expect`/`actual` for Android + iOS)
+- **`KmpWorkerTestRule`** — JUnit4 test rule for coroutine-safe worker testing
+- **`KmpWorkerDsl`** improvements — `taskGraph {}` DSL builder
+- **`enqueueBatch()` / `cancelBatch()`** — bulk operations on `KmpWorker`
+- **`getExecutionHistory()` / `clearExecutionHistory()`** — telemetry access on `KmpWorker`
+- Instrumented test: `KmpTaskWorkerInstrumentedTest`
+
+### Changed
+- **`TaskState.Running`** changed from `data object` to `data class` with optional `progress: Float?` and `message: String?` — **breaking change** for consumers pattern-matching on `TaskState.Running`
+- Default KMP hierarchy template re-enabled (`applyDefaultHierarchyTemplate=false` removed from root)
+- `umbrella/build.gradle.kts` simplified — `iosMain` now uses standard `iosMain.dependencies {}` block
+
+### Fixed
+- Maven Central publishing: Android AAR was publishing empty; iOS artifacts returning 404 — resolved by hierarchy template fix
+- Data race in `SqlDelightTelemetryCollector.startTimes` — now protected by `Mutex`
+- Data race in `TaskGraphExecutor` — parallel nodes now use `async/awaitAll` instead of mutable shared sets
+
+---
+
 ## [0.1.0-beta01] — 2026-05-23 🎉 API Freeze
+
 
 > **Public API is now frozen.** No breaking changes will be made after this release.
 
@@ -108,11 +146,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Version Roadmap
 
 | Version | Status | Highlights |
-|---------|--------|-----------| 
+|---------|--------|-----------|
 | v0.1.0-alpha01 | Released | Core API, Android + iOS, EventStore, Chaining, NSURLSession |
 | v0.1.0-alpha02 | Released | ProGuard rules, FakeNetworkMonitor, retry factory functions |
-| v0.1.0-alpha03 | **Current** | Bug fixes — suspend OfflineQueue, FakeKmpWorker reset, AndroidNetworkMonitor |
-| v0.1.0-beta01 | Planned | Public API freeze, instrumented tests on device |
-| v0.1.0 | Planned | Stable release, full docs, iOS Swift package |
-| v0.2.0 | Planned | Priority queues, task dependencies graph |
-| v1.0.0 | Planned | Production-hardened, full iOS parity |
+| v0.1.0-alpha03 | Released | Bug fixes — suspend OfflineQueue, FakeKmpWorker reset, AndroidNetworkMonitor |
+| v0.1.0-beta01  | Released | Public API freeze, instrumented tests on device |
+| v0.1.0-beta02  | **Current** | Telemetry, DAG graphs, progress tracking, transfer module, iOS FlowWrapper |
+| v0.1.0         | Planned | Stable release, full docs, iOS Swift package |
+| v0.2.0         | Planned | Priority queues, advanced scheduling |
+| v1.0.0         | Planned | Production-hardened, full iOS parity |
+
