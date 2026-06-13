@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.sqldelight)           apply false
     alias(libs.plugins.kotlin.android)       apply false
     alias(libs.plugins.kotlin.serialization) apply false
-    alias(libs.plugins.dokka)                apply false
+    alias(libs.plugins.dokka)
     alias(libs.plugins.vanniktech.publish)   apply false
 }
 
@@ -18,9 +18,13 @@ plugins {
 tasks.register("generateDocs") {
     group       = "documentation"
     description = "Generates Dokka HTML API documentation for all modules"
-    dependsOn(subprojects.mapNotNull { sub ->
-        sub.tasks.findByName("dokkaHtml")?.let { "${sub.path}:dokkaHtml" }
-    })
+    dependsOn("dokkaHtmlMultiModule")
+    doLast {
+        copy {
+            from(layout.buildDirectory.dir("dokka/htmlMultiModule"))
+            into(layout.buildDirectory.dir("dokka/html"))
+        }
+    }
 }
 
 // ————————————————————————————————————————————————————————————————————————————————————————————
@@ -44,6 +48,7 @@ allprojects {
 // The javaDocReleaseGeneration crash is suppressed per-module instead.
 
 subprojects {
+    apply(plugin = "org.jetbrains.dokka")
     plugins.withId("com.vanniktech.maven.publish") {
         configure<MavenPublishBaseExtension> {
             // publishToMavenCentral() and signAllPublications() are configured
