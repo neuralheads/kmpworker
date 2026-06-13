@@ -178,11 +178,13 @@ class AndroidTaskScheduler(
             .setRequiresDeviceIdle(kmpConstraints.requiresDeviceIdle)
 
         // Add content URI triggers if specified
-        for (uri in kmpConstraints.contentUris) {
-            builder.addContentUriTrigger(
-                android.net.Uri.parse(uri),
-                /* triggerForDescendants = */ true
-            )
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            for (uri in kmpConstraints.contentUris) {
+                builder.addContentUriTrigger(
+                    android.net.Uri.parse(uri),
+                    /* triggerForDescendants = */ true
+                )
+            }
         }
 
         return builder.build()

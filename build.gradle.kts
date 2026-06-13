@@ -104,7 +104,8 @@ subprojects {
                 doFirst {
                     val current = pub.repository.url
                     val str = current.toString()
-                    if (str.startsWith("file:") && !str.startsWith("file:///")) {
+                    val isWindows = System.getProperty("os.name").lowercase().contains("win")
+                    if (isWindows && str.startsWith("file:") && !str.startsWith("file:///")) {
                         pub.repository.setUrl(
                             URI("file:///" + str.removePrefix("file://").replace('\\', '/'))
                         )
