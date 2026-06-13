@@ -93,6 +93,21 @@ class AndroidTaskScheduler(
                 )
             }
 
+            is TaskType.Windowed -> {
+                val delayMillis = maxOf(0L, type.earliestMillis - System.currentTimeMillis())
+                val builder = OneTimeWorkRequestBuilder<KmpTaskWorker>()
+                    .setInputData(inputData)
+                    .setConstraints(constraints)
+                    .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
+                request.tags.forEach { tag -> builder.addTag(tag) }
+                applyRetryPolicyToOneTime(builder, request.retryPolicy)
+                workManager.enqueueUniqueWork(
+                    request.id,
+                    ExistingWorkPolicy.REPLACE,
+                    builder.build()
+                )
+            }
+
             is TaskType.Periodic -> {
                 val workRequest = buildPeriodicRequest(
                     type.repeatIntervalMillis,
@@ -153,14 +168,24 @@ class AndroidTaskScheduler(
     private fun buildWorkConstraints(
         kmpConstraints: io.neuralheads.kmpworker.core.Constraints
     ): Constraints {
-        return Constraints.Builder()
+        val builder = Constraints.Builder()
             .setRequiredNetworkType(
                 if (kmpConstraints.requiresInternet) NetworkType.CONNECTED
                 else NetworkType.NOT_REQUIRED
             )
             .setRequiresCharging(kmpConstraints.requiresCharging)
             .setRequiresBatteryNotLow(kmpConstraints.batteryNotLow)
-            .build()
+            .setRequiresDeviceIdle(kmpConstraints.requiresDeviceIdle)
+
+        // Add content URI triggers if specified
+        for (uri in kmpConstraints.contentUris) {
+            builder.addContentUriTrigger(
+                android.net.Uri.parse(uri),
+                /* triggerForDescendants = */ true
+            )
+        }
+
+        return builder.build()
     }
 
     private fun buildPeriodicRequest(

@@ -1,5 +1,6 @@
 package io.neuralheads.kmpworker.scheduler
 
+import io.neuralheads.kmpworker.core.ChainPolicy
 import io.neuralheads.kmpworker.core.KmpWorker
 import io.neuralheads.kmpworker.core.TaskChain
 import io.neuralheads.kmpworker.core.TaskExecutionContext
@@ -31,7 +32,7 @@ interface TaskScheduler : KmpWorker {
     override fun registerWithContext(taskId: String, block: suspend TaskExecutionContext.() -> Unit)
 
     // Chain methods are delegated to the KmpWorker implementation layer — schedulers don't handle them.
-    override suspend fun enqueueChain(chain: TaskChain) =
+    override suspend fun enqueueChain(chain: TaskChain, policy: ChainPolicy) =
         error("enqueueChain() is not supported at the TaskScheduler level. Use KmpWorker.enqueueChain().")
 
     override fun observeChain(chainId: String): Flow<TaskState> = emptyFlow()

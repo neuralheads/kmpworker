@@ -90,6 +90,7 @@ class SqlDelightTaskRepository(
         is TaskType.OneTime   -> "OneTime"
         is TaskType.Periodic  -> "Periodic:${repeatIntervalMillis}"
         is TaskType.ExactTime -> "ExactTime:${runAtMillis}"
+        is TaskType.Windowed  -> "Windowed:${earliestMillis}:${latestMillis}"
     }
 
     private fun String.toTaskType(): TaskType = when {
@@ -101,6 +102,13 @@ class SqlDelightTaskRepository(
         startsWith("ExactTime:") -> {
             val runAt = removePrefix("ExactTime:").toLongOrNull() ?: 0L
             TaskType.ExactTime(runAtMillis = runAt)
+        }
+        startsWith("Windowed:") -> {
+            val parts = removePrefix("Windowed:").split(":")
+            TaskType.Windowed(
+                earliestMillis = parts.getOrNull(0)?.toLongOrNull() ?: 0L,
+                latestMillis = parts.getOrNull(1)?.toLongOrNull() ?: 0L
+            )
         }
         else -> TaskType.OneTime  // safe fallback for unknown future types
     }

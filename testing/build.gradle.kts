@@ -1,10 +1,13 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
+    alias(libs.plugins.vanniktech.publish)
 }
 
-group   = "io.neuralheads"
-version = "0.1.0"
+group   = "com.neuralheads"
+version = rootProject.properties["VERSION_NAME"]?.toString() ?: "0.1.0-alpha01"
+
+apply(from = rootProject.file("gradle/publish.gradle.kts"))
 
 kotlin {
     androidTarget {
@@ -26,6 +29,11 @@ kotlin {
             implementation(project(":persistence"))
             implementation(libs.kotlinx.coroutines.core)
             api(kotlin("test"))
+        }
+        androidMain.dependencies {
+            implementation(libs.junit)
+            implementation(libs.androidx.test.core)
+            implementation(libs.androidx.work.testing)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

@@ -28,4 +28,26 @@ data class TaskExecutionContext(
 
     /** Returns true if this is a retry attempt. */
     val isRetry: Boolean get() = retryCount > 0
+
+    /**
+     * Reports progress from within a task handler.
+     *
+     * Emits a [TaskState.Running] with progress info to [TaskMonitor],
+     * which flows to any active observers.
+     *
+     * ```kotlin
+     * kmpWorker.registerWithContext("upload") {
+     *     for (i in 0..100 step 10) {
+     *         reportProgress(i / 100f, "Uploading chunk $i")
+     *         delay(500)
+     *     }
+     * }
+     * ```
+     *
+     * @param progress Percentage complete (0.0–1.0).
+     * @param message Optional human-readable status.
+     */
+    suspend fun reportProgress(progress: Float, message: String? = null) {
+        TaskMonitor.emit(taskId, TaskState.Running(progress = progress, message = message))
+    }
 }

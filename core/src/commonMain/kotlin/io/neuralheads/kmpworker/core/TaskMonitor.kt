@@ -27,7 +27,7 @@ import kotlin.concurrent.Volatile
  * TaskMonitor.observe("sync-users").collect { state -> ... }
  *
  * // Emit:
- * TaskMonitor.emit("sync-users", TaskState.Running)
+ * TaskMonitor.emit("sync-users", TaskState.Running())
  * ```
  */
 object TaskMonitor {

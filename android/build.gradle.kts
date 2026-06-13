@@ -1,6 +1,6 @@
 plugins {
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.vanniktech.publish)
 }
 
@@ -9,6 +9,48 @@ version = rootProject.properties["VERSION_NAME"]?.toString() ?: "0.1.0-alpha01"
 
 apply(from = rootProject.file("gradle/publish.gradle.kts"))
 
+kotlin {
+    androidTarget {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                }
+            }
+        }
+    }
+
+    sourceSets {
+        androidMain.dependencies {
+            implementation(project(":core"))
+            implementation(project(":scheduler"))
+            implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.androidx.work.runtime.ktx)
+            implementation(libs.androidx.startup.runtime)
+        }
+
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.robolectric)
+                implementation(libs.androidx.test.core)
+                implementation(libs.androidx.test.runner)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.androidx.work.testing)
+            }
+        }
+
+        val androidInstrumentedTest by getting {
+            dependencies {
+                implementation(libs.androidx.test.core)
+                implementation(libs.androidx.test.runner)
+                implementation(libs.androidx.test.rules)
+                implementation(libs.androidx.work.testing)
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+    }
+}
 
 android {
     namespace  = "io.neuralheads.kmpworker.android"
@@ -25,36 +67,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     testOptions {
         unitTests {
-            isIncludeAndroidResources = true // Required for Robolectric
+            isIncludeAndroidResources = true
         }
     }
-}
-
-dependencies {
-    implementation(project(":core"))
-    implementation(project(":scheduler"))
-    implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.startup.runtime)
-
-    // JVM unit tests with Robolectric (no device needed)
-    testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.androidx.test.runner)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.androidx.work.testing)
-
-    // Instrumented tests (requires device/emulator)
-    androidTestImplementation(libs.androidx.test.core)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.rules)
-    androidTestImplementation(libs.androidx.work.testing)
-    androidTestImplementation(libs.kotlinx.coroutines.test)
 }

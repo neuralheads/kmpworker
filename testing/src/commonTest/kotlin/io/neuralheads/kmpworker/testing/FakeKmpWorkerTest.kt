@@ -67,7 +67,7 @@ class FakeKmpWorkerTest {
 
         val states = fake.allStatesFor("seq")
         assertTrue(states.contains(TaskState.Scheduled))
-        assertTrue(states.contains(TaskState.Running))
+        assertTrue(states.any { it is TaskState.Running })
         assertTrue(states.contains(TaskState.Success))
     }
 
