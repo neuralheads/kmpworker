@@ -37,8 +37,12 @@ class KmpWorkerInitializer : Initializer<Unit> {
         // Eagerly initialize WorkManager to avoid first-use cold start latency.
         // This also validates that the WorkManager configuration is correct at startup
         // rather than at first enqueue().
-        androidx.work.WorkManager.getInstance(context)
-        KmpWorkerLogger.d("KMPWorker initialized via App Startup")
+        try {
+            androidx.work.WorkManager.getInstance(context)
+            KmpWorkerLogger.d("KMPWorker initialized via App Startup")
+        } catch (e: IllegalStateException) {
+            KmpWorkerLogger.w("WorkManager not initialized yet during App Startup: ${e.message}")
+        }
     }
 
     override fun dependencies(): List<Class<out Initializer<*>>> = emptyList()
