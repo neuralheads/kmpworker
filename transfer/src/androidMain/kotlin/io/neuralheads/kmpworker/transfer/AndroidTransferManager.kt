@@ -56,10 +56,10 @@ class AndroidTransferManager : TransferManager {
             val totalBytes = if (responseCode == 206) {
                 conn.getHeaderField("Content-Range")
                     ?.substringAfter("/")?.toLongOrNull()
-                    ?: (conn.contentLengthLong + existingBytes)
+                    ?: (conn.contentLengthLongCompat + existingBytes)
             } else {
                 existingBytes = 0 // full download, reset
-                conn.contentLengthLong
+                conn.contentLengthLongCompat
             }
 
             TaskMonitor.tryEmit(request.id, TaskState.Running())
@@ -177,3 +177,6 @@ class AndroidTransferManager : TransferManager {
         }
     }
 }
+
+private val HttpURLConnection.contentLengthLongCompat: Long
+    get() = getHeaderField("Content-Length")?.toLongOrNull() ?: -1L
