@@ -123,9 +123,9 @@ jobs:
       - name: Run iOS tests (simulator)
         run: ./gradlew :core:iosSimulatorArm64Test :ios:iosSimulatorArm64Test --stacktrace
 
-  # ── Publish Snapshot ──────────────────────────────────────────────────────
-  publish-snapshot:
-    name: Publish Snapshot
+  # ── Verify Publishing ─────────────────────────────────────────────────────
+  verify-publish:
+    name: Verify Publishing (Maven Local)
     runs-on: macos-latest
     needs: [ lint, test-android, test-instrumented, test-ios ]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -138,12 +138,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Publish to Maven Central (snapshot)
-        run: ./gradlew publishAllPublicationsToMavenCentralRepository --stacktrace
+      - name: Publish to Maven Local (Verification)
+        run: ./gradlew publishToMavenLocal --stacktrace
         env:
-          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_RELEASE_SIGNING_ENABLED: true

@@ -76,3 +76,8 @@ if (envMavenUsername != null) {
 if (envMavenPassword != null) {
     project.extensions.extraProperties["mavenCentralPassword"] = envMavenPassword
 }
+
+project.tasks.withType(org.gradle.plugins.signing.Sign::class.java).configureEach {
+    val hasKey = project.hasProperty("signingInMemoryKey") || project.extensions.extraProperties.has("signingInMemoryKey")
+    enabled = hasKey
+}
