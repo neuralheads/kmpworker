@@ -10,10 +10,15 @@ import androidx.work.workDataOf
 import io.neuralheads.kmpworker.core.TaskMonitor
 import io.neuralheads.kmpworker.core.TaskRegistry
 import io.neuralheads.kmpworker.core.TaskState
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -125,11 +130,10 @@ class KmpTaskWorkerInstrumentedTest {
     fun successState_emittedToTaskMonitor() = runBlocking {
         TaskRegistry.register("inst-monitor") { /* no-op */ }
 
-        var successEmitted = false
-        val job = kotlinx.coroutines.GlobalScope.launch {
-            TaskMonitor.observe("inst-monitor").collect { state ->
-                if (state is TaskState.Success) successEmitted = true
-            }
+        val deferred = async(kotlinx.coroutines.Dispatchers.Default) {
+            TaskMonitor.observe("inst-monitor")
+                .filter { it is TaskState.Success }
+                .first()
         }
 
         TestListenableWorkerBuilder<io.neuralheads.kmpworker.android.KmpTaskWorker>(context)
@@ -141,7 +145,9 @@ class KmpTaskWorkerInstrumentedTest {
             .build()
             .doWork()
 
-        job.cancel()
-        assertTrue("Success state must be emitted to TaskMonitor on real device", successEmitted)
+        val result = withTimeoutOrNull(3000) {
+            deferred.await()
+        }
+        assertNotNull("Success state must be emitted to TaskMonitor on real device", result)
     }
 }
