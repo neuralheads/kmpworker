@@ -41,11 +41,11 @@
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker:0.3.0")
+            implementation("com.neuralheads:kmpworker:0.1.0-beta04")
         }
         // Android platform worker (required for androidMain)
         androidMain.dependencies {
-            implementation("com.neuralheads:kmpworker-android-android:0.3.0")
+            implementation("com.neuralheads:kmpworker-android:0.1.0-beta04")
         }
     }
 }
@@ -55,10 +55,10 @@ kotlin {
 
 ```kotlin
 // HTTP transfers (download/upload with resume & checksum)
-implementation("com.neuralheads:kmpworker-transfer:0.3.0")
+implementation("com.neuralheads:kmpworker-transfer:0.1.0-beta04")
 
 // Testing (FakeKmpWorker + KmpWorkerTestRule)
-testImplementation("com.neuralheads:kmpworker-testing:0.3.0")
+testImplementation("com.neuralheads:kmpworker-testing:0.1.0-beta04")
 ```
 
 ---

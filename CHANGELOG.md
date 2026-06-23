@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0-beta04] — 2026-06-23
+
+### Fixed
+- **POM Configuration** — corrected the `POM_ARTIFACT_ID` mapping for `:testing` (`kmpworker-testing`) and `:transfer` (`kmpworker-transfer`) modules to ensure correct artifact resolution for consumers.
+
+---
+
+## [0.1.0-beta03] — 2026-06-14
+
+### Fixed
+- **API 23 Compatibility** — resolved incompatibility in `AndroidTransferManager` by utilizing `contentLengthLongCompat` for robust content-length resolution on Android 6.0 devices.
+- **Startup Initialization** — caught `IllegalStateException` in the Jetpack App Startup initializer to prevent test environment configuration crashes.
+- **Dokka Documentation** — corrected multi-module Dokka layout and applied plugin correctly to all subprojects to build `generateDocs` output.
+- **Signing & CI** — updated publish workflow to dynamically disable GPG signing if key environment variables are missing, and verified local publishing flows on GitHub Actions.
+- **Test Stability** — fixed a race condition in the `successState_emittedToTaskMonitor` instrumented test case.
+
+---
+
 ## [0.1.0-beta02] — 2026-06-14
 
 ### Added (contributed by [@muhammadsobananjum](https://github.com/muhammadsobananjum) via [#1](https://github.com/neuralheads/kmpworker/pull/1))
@@ -151,7 +169,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | v0.1.0-alpha02 | Released | ProGuard rules, FakeNetworkMonitor, retry factory functions |
 | v0.1.0-alpha03 | Released | Bug fixes — suspend OfflineQueue, FakeKmpWorker reset, AndroidNetworkMonitor |
 | v0.1.0-beta01  | Released | Public API freeze, instrumented tests on device |
-| v0.1.0-beta02  | **Current** | Telemetry, DAG graphs, progress tracking, transfer module, iOS FlowWrapper |
+| v0.1.0-beta02  | Released | Telemetry, DAG graphs, progress tracking, transfer module, iOS FlowWrapper |
+| v0.1.0-beta03  | Released | API 23 transfer fix, test stabilization, signing improvements |
+| v0.1.0-beta04  | **Current** | POM artifact ID fixes for testing and transfer modules |
 | v0.1.0         | Planned | Stable release, full docs, iOS Swift package |
 | v0.2.0         | Planned | Priority queues, advanced scheduling |
 | v1.0.0         | Planned | Production-hardened, full iOS parity |
