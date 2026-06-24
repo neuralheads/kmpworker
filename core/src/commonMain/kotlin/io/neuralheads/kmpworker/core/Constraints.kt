@@ -1,4 +1,4 @@
-﻿package io.neuralheads.kmpworker.core
+package io.neuralheads.kmpworker.core
 
 import kotlinx.serialization.Serializable
 
@@ -34,5 +34,11 @@ data class Constraints(
      *
      * Example: `contentUris = listOf("content://media/external/images/media")`
      */
-    val contentUris: List<String> = emptyList()
+    val contentUris: List<String> = emptyList(),
+
+    /** Task should only run when on an unmetered network (e.g. Wi-Fi). */
+    val requiresUnmeteredNetwork: Boolean = false,
+
+    /** Task should only run when on a non-roaming network. */
+    val requiresNonRoamingNetwork: Boolean = false
 )

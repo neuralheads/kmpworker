@@ -55,6 +55,7 @@ class SqlDelightTelemetryCollector(
         val errorMsg = when (state) {
             is TaskState.Failed -> state.throwable.message
             is TaskState.TimedOut -> "Timed out after ${state.afterMillis}ms"
+            is TaskState.Cancelled -> state.reason.takeIf { it.isNotEmpty() }
             else -> null
         }
 

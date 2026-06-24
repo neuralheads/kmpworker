@@ -41,11 +41,11 @@
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.neuralheads:kmpworker:0.1.0-beta04")
+            implementation("com.neuralheads:kmpworker:0.1.0-beta06")
         }
         // Android platform worker (required for androidMain)
         androidMain.dependencies {
-            implementation("com.neuralheads:kmpworker-android:0.1.0-beta04")
+            implementation("com.neuralheads:kmpworker-android:0.1.0-beta06")
         }
     }
 }
@@ -55,10 +55,13 @@ kotlin {
 
 ```kotlin
 // HTTP transfers (download/upload with resume & checksum)
-implementation("com.neuralheads:kmpworker-transfer:0.1.0-beta04")
+implementation("com.neuralheads:kmpworker-transfer:0.1.0-beta06")
+
+// Compose Live Inspector (v0.1.0-beta06+)
+implementation("com.neuralheads:kmpworker-inspector:0.1.0-beta06")
 
 // Testing (FakeKmpWorker + KmpWorkerTestRule)
-testImplementation("com.neuralheads:kmpworker-testing:0.1.0-beta04")
+testImplementation("com.neuralheads:kmpworker-testing:0.1.0-beta06")
 ```
 
 ---
@@ -200,6 +203,8 @@ Constraints(
     requiresInternet = true,
     requiresCharging = false,
     batteryNotLow = true,
+    requiresUnmeteredNetwork = true,                      // Wi-Fi only (v0.1.0-beta06+)
+    requiresNonRoamingNetwork = true,                     // Non-roaming only (v0.1.0-beta06+)
     requiresDeviceIdle = false,                           // Android only
     contentUris = listOf("content://media/external/images") // Android only
 )
@@ -331,6 +336,25 @@ worker.clearExecutionHistory()
 
 ---
 
+## Compose Live Inspector
+
+KMPWorker includes a gorgeous, reactive live inspector dashboard built with Compose Multiplatform to monitor and simulate task execution in real-time.
+
+```kotlin
+// Host the inspector screen inside a ComposeView or Composable tree
+KmpWorkerInspectorScreen(kmpWorker = kmpWorker)
+```
+
+The inspector provides:
+- **Real-Time Metrics Grid**: View active task counts, success rate, and error/timeout counters.
+- **Registered Handlers**: Displays all registered handlers in `TaskRegistry` with individual buttons to trigger them.
+- **Live Queue**: Real-time list of pending and running tasks.
+- **DAG Visualizer**: Live step-indicator visualizing sequential task chain progress. Includes a "Simulate Chain" button.
+- **Historical Telemetry Logs**: A scrollable list displaying past runs with durations, states, and error/cancellation reasons.
+- **Custom Task Enqueuer**: Dialog to quickly schedule new tasks with custom priorities, timeouts, and hardware/network constraints.
+
+---
+
 ## HTTP Transfers
 
 No Ktor required — uses `HttpURLConnection` (Android) and `NSURLSession` (iOS):
@@ -432,6 +456,7 @@ class MyWorkerTest {
 | `kmpworker-persistence` | SQLDelight storage + telemetry |
 | `kmpworker-queue` | Offline queue + network monitors |
 | `kmpworker-transfer` | HTTP download/upload (no Ktor) |
+| `kmpworker-inspector` | Compose Multiplatform Live Inspector UI |
 | `kmpworker-testing` | FakeKmpWorker + test rule |
 | `kmpworker-scheduler` | TaskScheduler interface |
 

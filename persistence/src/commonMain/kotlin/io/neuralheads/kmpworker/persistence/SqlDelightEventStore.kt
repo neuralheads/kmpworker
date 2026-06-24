@@ -68,7 +68,7 @@ class SqlDelightEventStore(
      */
     private fun TaskState.toEventTuple(): EventTuple = when (this) {
         is TaskState.Success   -> EventTuple("Success",   null, 0, false)
-        is TaskState.Cancelled -> EventTuple("Cancelled", null, 0, false)
+        is TaskState.Cancelled -> EventTuple("Cancelled", reason, 0, false)
         is TaskState.Failed    -> EventTuple(
             stateType  = "Failed",
             errorMsg   = throwable.message,
@@ -92,7 +92,7 @@ class SqlDelightEventStore(
     private fun Task_events.toTaskState(): TaskState? =
         when (state_type) {
             "Success"   -> TaskState.Success
-            "Cancelled" -> TaskState.Cancelled
+            "Cancelled" -> TaskState.Cancelled(error_msg ?: "")
             "Failed"    -> TaskState.Failed(
                 throwable  = Exception(error_msg ?: "Unknown error"),
                 retryCount = retry_count.toInt(),

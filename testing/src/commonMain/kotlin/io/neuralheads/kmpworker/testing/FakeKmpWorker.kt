@@ -106,7 +106,7 @@ class FakeKmpWorker : KmpWorker {
 
     override suspend fun cancel(taskId: String) {
         cancelledTasks.add(taskId)
-        emitState(taskId, TaskState.Cancelled)
+        emitState(taskId, TaskState.Cancelled())
     }
 
     override suspend fun cancelByTag(tag: String) {

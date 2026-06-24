@@ -10,15 +10,19 @@ import android.view.View
 import android.widget.Button
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.lifecycleScope
 import io.neuralheads.kmpworker.core.Constraints
 import io.neuralheads.kmpworker.core.RetryPolicy
 import io.neuralheads.kmpworker.core.TaskRequest
 import io.neuralheads.kmpworker.core.TaskState
 import io.neuralheads.kmpworker.core.TaskType
+import io.neuralheads.kmpworker.inspector.KmpWorkerInspectorScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * KMPWorker System Test Dashboard.
@@ -100,6 +104,8 @@ class MainActivity : AppCompatActivity() {
         runTest("8. Periodic task enqueued") { testPeriodicTask() }
         runTest("9. Constrained task enqueued") { testConstraints() }
         runTest("10. Config logger integration") { testConfigLogger() }
+        runTest("11. Priority queue execution") { testPriorityQueue() }
+        runTest("12. Task timeout execution") { testTaskTimeout() }
 
         log("\n═══════════════════════════════════", COLOR_HEADER)
         val color = if (failCount == 0) COLOR_PASS else COLOR_FAIL
@@ -292,12 +298,17 @@ class MainActivity : AppCompatActivity() {
             TaskRequest(
                 id = "test-constrained",
                 type = TaskType.OneTime,
-                constraints = Constraints(requiresInternet = true, batteryNotLow = true)
+                constraints = Constraints(
+                    requiresInternet = true,
+                    batteryNotLow = true,
+                    requiresUnmeteredNetwork = true,
+                    requiresNonRoamingNetwork = true
+                )
             )
         )
 
         delay(1_000)
-        log("   Constrained task enqueued without crash", COLOR_INFO)
+        log("   Constrained task enqueued with Wi-Fi & non-roaming constraints", COLOR_INFO)
         return true
     }
 
@@ -330,6 +341,61 @@ class MainActivity : AppCompatActivity() {
         return logLines.isNotEmpty()
     }
 
+    private suspend fun testPriorityQueue(): Boolean {
+        kmpWorker.register("test-priority-high") { /* no-op */ }
+        kmpWorker.register("test-priority-low") { /* no-op */ }
+
+        kmpWorker.enqueue(
+            TaskRequest(
+                id = "test-priority-high",
+                type = TaskType.OneTime,
+                priority = io.neuralheads.kmpworker.core.TaskPriority.HIGH
+            )
+        )
+        kmpWorker.enqueue(
+            TaskRequest(
+                id = "test-priority-low",
+                type = TaskType.OneTime,
+                priority = io.neuralheads.kmpworker.core.TaskPriority.LOW
+            )
+        )
+
+        delay(2_000)
+        log("   Priority tasks scheduled successfully", COLOR_INFO)
+        return true
+    }
+
+    private suspend fun testTaskTimeout(): Boolean {
+        var completed = false
+
+        kmpWorker.register("test-timeout-task") {
+            delay(5_000)
+            completed = true
+        }
+
+        val states = mutableListOf<TaskState>()
+        val job = lifecycleScope.launch {
+            kmpWorker.observe("test-timeout-task").collect { states.add(it) }
+        }
+
+        kmpWorker.enqueue(
+            TaskRequest(
+                id = "test-timeout-task",
+                type = TaskType.OneTime,
+                timeout = 2.seconds
+            )
+        )
+
+        delay(4_000)
+        job.cancel()
+
+        log("   states=${states.map { it::class.simpleName }}", COLOR_INFO)
+        log("   completed=$completed", COLOR_INFO)
+        
+        val hasTimedOut = states.any { it is TaskState.TimedOut }
+        return hasTimedOut && !completed
+    }
+
     // ── UI helpers ────────────────────────────────────────────────────────────
 
     private fun log(message: String, color: Int = COLOR_INFO) {
@@ -346,6 +412,18 @@ class MainActivity : AppCompatActivity() {
             scrollView.post { scrollView.fullScroll(View.FOCUS_DOWN) }
         }
         Log.d(TAG, message)
+    }
+
+    private fun openLiveInspector() {
+        val composeView = ComposeView(this).apply {
+            setContent {
+                BackHandler {
+                    setContentView(buildLayout())
+                }
+                KmpWorkerInspectorScreen(kmpWorker = kmpWorker)
+            }
+        }
+        setContentView(composeView)
     }
 
     private fun buildLayout(): View {
@@ -374,6 +452,23 @@ class MainActivity : AppCompatActivity() {
             textSize = 14f
         }
 
+        val inspectorButton = Button(context).apply {
+            text = "📊  Open Live Inspector"
+            setBackgroundColor(Color.parseColor("#0969DA"))
+            setTextColor(Color.WHITE)
+            textSize = 14f
+            val params = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 16
+            }
+            layoutParams = params
+            setOnClickListener {
+                openLiveInspector()
+            }
+        }
+
         logView = TextView(context).apply {
             textSize = 12f
             setTextColor(COLOR_INFO)
@@ -383,6 +478,7 @@ class MainActivity : AppCompatActivity() {
 
         container.addView(statusView)
         container.addView(runButton)
+        container.addView(inspectorButton)
         container.addView(logView)
         scrollView.addView(container)
 

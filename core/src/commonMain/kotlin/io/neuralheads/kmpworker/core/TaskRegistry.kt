@@ -1,5 +1,7 @@
 package io.neuralheads.kmpworker.core
 
+import kotlin.time.Duration
+
 /**
  * Thread-safe global registry mapping task IDs to their suspend handler functions.
  *
@@ -26,6 +28,15 @@ object TaskRegistry {
     // (main thread, before any concurrent background access). This avoids a
     // JVM-only ConcurrentHashMap dependency in commonMain.
     private val handlers = mutableMapOf<String, suspend TaskExecutionContext.() -> Unit>()
+    private val timeouts = mutableMapOf<String, Duration>()
+
+    /** Registers a timeout for the given task ID. */
+    fun setTimeout(id: String, duration: Duration) {
+        timeouts[id] = duration
+    }
+
+    /** Returns the registered timeout for the given task ID, if any. */
+    fun timeoutFor(id: String): Duration? = timeouts[id]
 
     /**
      * Registers a suspend handler for the given task ID.
@@ -81,5 +92,6 @@ object TaskRegistry {
     /** Clears all registered handlers. For use in tests only. */
     fun clearAll() {
         handlers.clear()
+        timeouts.clear()
     }
 }

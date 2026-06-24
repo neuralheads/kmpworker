@@ -7,13 +7,15 @@ CREATE TABLE tasks (
     status      TEXT    NOT NULL,           -- "PENDING" | "RUNNING" | "SUCCESS" | "FAILED"
     retry_count INTEGER NOT NULL DEFAULT 0,
     payload     TEXT,                       -- Optional serialized task payload
-    created_at  INTEGER NOT NULL            -- Unix epoch millis
+    created_at  INTEGER NOT NULL,           -- Unix epoch millis
+    priority    TEXT    NOT NULL DEFAULT 'NORMAL', -- "HIGH" | "NORMAL" | "LOW"
+    timeout_ms  INTEGER                     -- Optional timeout in milliseconds
 );
 
 -- Insert a new task (or ignore if already exists)
 insertTask:
-INSERT OR IGNORE INTO tasks (id, type, status, retry_count, payload, created_at)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT OR IGNORE INTO tasks (id, type, status, retry_count, payload, created_at, priority, timeout_ms)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Update task status and retry count
 updateStatus:
@@ -30,9 +32,18 @@ getAll:
 SELECT * FROM tasks;
 
 -- Get only tasks that haven't completed yet (for recovery on app restart)
+-- Ordered by priority (HIGH -> NORMAL -> LOW) and then created_at
 getPending:
 SELECT * FROM tasks
-WHERE status IN ('PENDING', 'RUNNING');
+WHERE status IN ('PENDING', 'RUNNING')
+ORDER BY 
+    CASE priority
+        WHEN 'HIGH' THEN 1
+        WHEN 'NORMAL' THEN 2
+        WHEN 'LOW' THEN 3
+        ELSE 4
+    END,
+    created_at ASC;
 
 -- Get a single task by ID
 getById:

@@ -5,6 +5,21 @@ All notable changes to KMPWorker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-beta06] — 2026-06-24
+
+### Added
+- **Task Priority Queueing (`:core`, `:persistence`)** — support for `TaskPriority` (`HIGH`, `NORMAL`, `LOW`), ordering tasks in the SQLite queue by priority, and executing `HIGH` priority tasks as expedited work requests on Android.
+- **Advanced Network Constraints (`:core`, `:android`, `:ios`)** — added `requiresUnmeteredNetwork` (Wi-Fi only) and `requiresNonRoamingNetwork` constraints, mapping them to native Android WorkManager configurations and iOS connectionExpensive / connectionConstrained checks.
+- **Individual Task Timeouts (`:core`, `:persistence`, `:android`, `:ios`)** — added `timeout` duration to `TaskRequest`, persisted via database schema migration (`1.sqm`), and enforced via Coroutine `withTimeout` on both platform runtimes.
+- **Task Cancellation Reasons (`:core`, `:persistence`)** — converted `TaskState.Cancelled` to a data class carrying a descriptive reason string, propagating it through the monitoring flow and logging in database telemetry.
+- **Compose Multiplatform Live Inspector (`:inspector`)** — a brand new optional module providing a high-fidelity real-time UI dashboard:
+  - Real-time metrics grid (success rate, active/error/timeout counters).
+  - Dynamic queue monitor and DAG sequence chain simulation.
+  - Interactive enqueuing/triggering tools and historical telemetry log viewer.
+
+### Fixed
+- **POM Artifact ID for Inspector** — corrected the Maven artifact ID for the new `:inspector` module to `kmpworker-inspector` (was incorrectly published as `inspector` in a temporary `0.1.0-beta05` staging upload) to match project-wide namespace conventions.
+
 ---
 
 ## [0.1.0-beta04] — 2026-06-23

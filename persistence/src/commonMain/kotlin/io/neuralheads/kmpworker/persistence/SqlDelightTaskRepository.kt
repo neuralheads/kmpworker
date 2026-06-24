@@ -2,8 +2,10 @@ package io.neuralheads.kmpworker.persistence
 
 import io.neuralheads.kmpworker.core.Constraints
 import io.neuralheads.kmpworker.core.RetryPolicy
+import io.neuralheads.kmpworker.core.TaskPriority
 import io.neuralheads.kmpworker.core.TaskRequest
 import io.neuralheads.kmpworker.core.TaskType
+import kotlin.time.Duration.Companion.milliseconds
 import io.neuralheads.kmpworker.persistence.db.KmpWorkerDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -33,7 +35,9 @@ class SqlDelightTaskRepository(
             status    = "PENDING",
             retry_count = 0L,
             payload   = task.payload,
-            created_at = currentEpochMillis()
+            created_at = currentEpochMillis(),
+            priority  = task.priority.name,
+            timeout_ms = task.timeout?.inWholeMilliseconds
         )
     }
 
@@ -77,13 +81,17 @@ class SqlDelightTaskRepository(
         status: String,
         retry_count: Long,
         payload: String?,
-        created_at: Long
-    ): Tasks = Tasks(id, type, status, retry_count, payload, created_at)
+        created_at: Long,
+        priority: String,
+        timeout_ms: Long?
+    ): Tasks = Tasks(id, type, status, retry_count, payload, created_at, priority, timeout_ms)
 
     private fun Tasks.toTaskRequest(): TaskRequest = TaskRequest(
         id      = id,
         type    = type.toTaskType(),
-        payload = payload
+        payload = payload,
+        priority = runCatching { TaskPriority.valueOf(priority) }.getOrDefault(TaskPriority.NORMAL),
+        timeout = timeout_ms?.milliseconds
     )
 
     private fun TaskType.toDbString(): String = when (this) {

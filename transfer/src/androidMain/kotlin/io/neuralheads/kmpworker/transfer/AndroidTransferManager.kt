@@ -148,7 +148,7 @@ class AndroidTransferManager : TransferManager {
     }
 
     override suspend fun cancel(transferId: String) {
-        TaskMonitor.emit(transferId, TaskState.Cancelled)
+        TaskMonitor.emit(transferId, TaskState.Cancelled())
         progressFlows.remove(transferId)
     }
 

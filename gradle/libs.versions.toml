@@ -18,6 +18,7 @@ androidxTestExtJunit = "1.2.1"
 espresso = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
+compose-multiplatform = "1.7.3"
 
 [libraries]
 # Coroutines
@@ -62,3 +63,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 vanniktech-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktechPublish" }
+jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

@@ -1,0 +1,3 @@
+-- Migration from version 1 to version 2
+ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'NORMAL';
+ALTER TABLE tasks ADD COLUMN timeout_ms INTEGER DEFAULT NULL;

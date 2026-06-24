@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -24,6 +25,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        compose = true
     }
 
     compileOptions {
@@ -41,7 +43,9 @@ dependencies {
     implementation(project(":android"))
     implementation(project(":persistence"))
     implementation(project(":queue"))
+    implementation(project(":inspector"))
 
+    implementation("androidx.activity:activity-compose:1.9.3")
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.appcompat)
     implementation(libs.material)

@@ -1,8 +1,12 @@
-﻿package io.neuralheads.kmpworker.sample
+package io.neuralheads.kmpworker.sample
 
 import android.app.Application
 import io.neuralheads.kmpworker.android.AndroidKmpWorker
 import io.neuralheads.kmpworker.core.KmpWorker
+import io.neuralheads.kmpworker.persistence.KmpWorkerDatabaseFactory
+import io.neuralheads.kmpworker.persistence.SqlDelightChainRepository
+import io.neuralheads.kmpworker.persistence.SqlDelightEventStore
+import io.neuralheads.kmpworker.persistence.SqlDelightTelemetryCollector
 
 /**
  * Sample Application demonstrating KMPWorker setup.
@@ -16,7 +20,19 @@ class SampleApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        kmpWorker = AndroidKmpWorker(context = this)
+        
+        // Initialize SQLite database and services
+        val database = KmpWorkerDatabaseFactory.create(this)
+        val eventStore = SqlDelightEventStore(database)
+        val chainRepo = SqlDelightChainRepository(database)
+        val telemetry = SqlDelightTelemetryCollector(database)
+        
+        kmpWorker = AndroidKmpWorker(
+            context = this,
+            eventStore = eventStore,
+            chainRepo = chainRepo,
+            telemetry = telemetry
+        )
         registerTasks()
     }
 

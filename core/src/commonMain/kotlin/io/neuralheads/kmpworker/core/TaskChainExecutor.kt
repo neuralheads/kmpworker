@@ -98,7 +98,7 @@ class TaskChainExecutor(
         val stepId = chain.stepId(progress.currentStep)
         worker.cancel(stepId)
         chainRepository.delete(chain.id)
-        TaskMonitor.emit(chain.id, TaskState.Cancelled)
+        TaskMonitor.emit(chain.id, TaskState.Cancelled("Chain cancelled"))
         KmpWorkerLogger.i("TaskChainExecutor: cancelled chain '${chain.id}'")
     }
 

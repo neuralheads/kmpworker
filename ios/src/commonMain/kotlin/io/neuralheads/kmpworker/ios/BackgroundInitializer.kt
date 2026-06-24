@@ -8,6 +8,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
+import io.neuralheads.kmpworker.core.KmpWorkerConfig
+import kotlin.time.TimeSource
 import platform.BackgroundTasks.BGAppRefreshTask
 import platform.BackgroundTasks.BGProcessingTask
 import platform.BackgroundTasks.BGTask
@@ -69,12 +73,27 @@ object BackgroundInitializer {
     }
 
     private fun handleTask(task: BGTask, taskId: String) {
+        val startTime = TimeSource.Monotonic.markNow()
+        val timeout = TaskRegistry.timeoutFor(taskId) ?: KmpWorkerConfig.current().taskTimeout
+
         val job = scope.launch {
             try {
                 TaskMonitor.emit(taskId, TaskState.Running())
-                TaskRegistry.execute(taskId)
+                
+                if (timeout != null) {
+                    withTimeout(timeout) {
+                        TaskRegistry.execute(taskId)
+                    }
+                } else {
+                    TaskRegistry.execute(taskId)
+                }
+                
                 TaskMonitor.emit(taskId, TaskState.Success)
                 task.setTaskCompletedWithSuccess(true)
+            } catch (e: TimeoutCancellationException) {
+                val afterMs = startTime.elapsedNow().inWholeMilliseconds
+                TaskMonitor.emit(taskId, TaskState.TimedOut(afterMillis = afterMs))
+                task.setTaskCompletedWithSuccess(false)
             } catch (e: Exception) {
                 TaskMonitor.emit(taskId, TaskState.Failed(throwable = e))
                 task.setTaskCompletedWithSuccess(false)

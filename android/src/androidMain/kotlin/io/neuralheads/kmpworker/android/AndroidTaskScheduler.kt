@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import io.neuralheads.kmpworker.core.RetryPolicy
@@ -48,6 +49,7 @@ class AndroidTaskScheduler(
     private val workManager get() = WorkManager.getInstance(context)
 
     override suspend fun enqueue(request: TaskRequest) {
+        request.timeout?.let { TaskRegistry.setTimeout(request.id, it) }
         val (policyType, policyDelay, policyMax) = encodeRetryPolicy(request.retryPolicy)
         val inputData = workDataOf(
             KmpTaskWorker.KEY_TASK_ID to request.id,
@@ -56,7 +58,9 @@ class AndroidTaskScheduler(
             KmpTaskWorker.KEY_RETRY_POLICY_DELAY to policyDelay,
             KmpTaskWorker.KEY_RETRY_POLICY_MAX to policyMax,
             KmpTaskWorker.KEY_PAYLOAD to request.payload,
-            KmpTaskWorker.KEY_TAGS to request.tags.joinToString(",")
+            KmpTaskWorker.KEY_TAGS to request.tags.joinToString(","),
+            KmpTaskWorker.KEY_TIMEOUT to (request.timeout?.inWholeMilliseconds ?: -1L),
+            KmpTaskWorker.KEY_PRIORITY to request.priority.name
         )
 
         val constraints = buildWorkConstraints(request.constraints)
@@ -66,6 +70,9 @@ class AndroidTaskScheduler(
                 val builder = OneTimeWorkRequestBuilder<KmpTaskWorker>()
                     .setInputData(inputData)
                     .setConstraints(constraints)
+                if (request.priority == io.neuralheads.kmpworker.core.TaskPriority.HIGH) {
+                    builder.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                }
                 // Apply tags for WorkManager group cancellation via cancelByTag()
                 request.tags.forEach { tag -> builder.addTag(tag) }
                 applyRetryPolicyToOneTime(builder, request.retryPolicy)
@@ -170,8 +177,12 @@ class AndroidTaskScheduler(
     ): Constraints {
         val builder = Constraints.Builder()
             .setRequiredNetworkType(
-                if (kmpConstraints.requiresInternet) NetworkType.CONNECTED
-                else NetworkType.NOT_REQUIRED
+                when {
+                    kmpConstraints.requiresUnmeteredNetwork -> NetworkType.UNMETERED
+                    kmpConstraints.requiresNonRoamingNetwork -> NetworkType.NOT_ROAMING
+                    kmpConstraints.requiresInternet -> NetworkType.CONNECTED
+                    else -> NetworkType.NOT_REQUIRED
+                }
             )
             .setRequiresCharging(kmpConstraints.requiresCharging)
             .setRequiresBatteryNotLow(kmpConstraints.batteryNotLow)

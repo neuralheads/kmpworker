@@ -11,6 +11,9 @@ import io.neuralheads.kmpworker.core.TaskExecutionContext
 import io.neuralheads.kmpworker.core.TaskMonitor
 import io.neuralheads.kmpworker.core.TaskRegistry
 import io.neuralheads.kmpworker.core.TaskState
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * WorkManager [CoroutineWorker] that bridges the Android scheduling system
@@ -38,6 +41,8 @@ class KmpTaskWorker(
         const val KEY_RETRY_POLICY_MAX = "retryPolicyMax"
         const val KEY_PAYLOAD = "payload"
         const val KEY_TAGS = "tags"
+        const val KEY_TIMEOUT = "timeout"
+        const val KEY_PRIORITY = "priority"
 
         const val POLICY_NONE = "none"
         const val POLICY_LINEAR = "linear"
@@ -79,6 +84,9 @@ class KmpTaskWorker(
         // Record telemetry start
         TelemetryBridge.collector?.onTaskStarted(taskId, startTime)
 
+        val timeoutMs = inputData.getLong(KEY_TIMEOUT, -1L)
+        val timeout = if (timeoutMs > 0) timeoutMs.milliseconds else KmpWorkerConfig.current().taskTimeout
+
         return try {
             TaskMonitor.emit(taskId, TaskState.Running())
 
@@ -88,13 +96,27 @@ class KmpTaskWorker(
                 payload = payload,
                 tags = tags
             )
-            TaskRegistry.execute(taskId, ctx)
+            
+            if (timeout != null) {
+                withTimeout(timeout) {
+                    TaskRegistry.execute(taskId, ctx)
+                }
+            } else {
+                TaskRegistry.execute(taskId, ctx)
+            }
 
             TaskMonitor.emit(taskId, TaskState.Success)
             KmpWorkerLogger.i("KmpTaskWorker: '$taskId' succeeded")
             TelemetryBridge.collector?.onTaskCompleted(taskId, TaskState.Success, System.currentTimeMillis(), retryCount)
             Result.success()
 
+        } catch (e: TimeoutCancellationException) {
+            val afterMs = System.currentTimeMillis() - startTime
+            val timedOutState = TaskState.TimedOut(afterMillis = afterMs)
+            KmpWorkerLogger.e("KmpTaskWorker: '$taskId' timed out after ${afterMs}ms", e)
+            TaskMonitor.emit(taskId, timedOutState)
+            TelemetryBridge.collector?.onTaskCompleted(taskId, timedOutState, System.currentTimeMillis(), retryCount)
+            Result.failure()
         } catch (e: Exception) {
             val willRetry = RetryEngine.shouldRetry(retryCount, retryPolicy)
             val failedState = TaskState.Failed(throwable = e, retryCount = retryCount, willRetry = willRetry)

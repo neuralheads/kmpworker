@@ -60,6 +60,7 @@ if ($signingKeyPassword) { $env:ORG_GRADLE_PROJECT_signingInMemoryKeyPassword = 
 
 $gradleArgs = @(
     "publishAllPublicationsToLocalReleaseRepository",
+    "-PRELEASE_SIGNING_ENABLED=true",
     "--no-daemon", "--no-configuration-cache",
     "-x", "test", "-x", "lint"
 )

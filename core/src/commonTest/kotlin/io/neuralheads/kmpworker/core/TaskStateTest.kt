@@ -1,4 +1,4 @@
-﻿package io.neuralheads.kmpworker.core
+package io.neuralheads.kmpworker.core
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
@@ -28,7 +28,7 @@ class TaskStateExtensionsTest {
 
     @Test
     fun `Cancelled isTerminal is true`() {
-        assertTrue(TaskState.Cancelled.isTerminal)
+        assertTrue(TaskState.Cancelled().isTerminal)
     }
 
     @Test

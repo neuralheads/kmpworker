@@ -49,8 +49,10 @@ sealed class TaskState {
     /**
      * Task was explicitly cancelled via [KmpWorker.cancel].
      * No retry will occur after cancellation.
+     *
+     * @param reason The reason why the task was cancelled.
      */
-    data object Cancelled : TaskState()
+    data class Cancelled(val reason: String = "") : TaskState()
 
     /**
      * Task exceeded the [KmpWorkerConfig.taskTimeout] duration and was stopped.

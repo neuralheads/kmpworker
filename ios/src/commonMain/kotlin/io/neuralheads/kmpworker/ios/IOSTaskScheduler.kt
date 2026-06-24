@@ -51,6 +51,7 @@ class IOSTaskScheduler : TaskScheduler {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     override suspend fun enqueue(request: TaskRequest) {
+        request.timeout?.let { TaskRegistry.setTimeout(request.id, it) }
         when (request.type) {
             is TaskType.OneTime -> {
                 val taskRequest = BGAppRefreshTaskRequest(identifier = request.id)
@@ -74,7 +75,9 @@ class IOSTaskScheduler : TaskScheduler {
 
             is TaskType.Periodic -> {
                 val taskRequest = BGProcessingTaskRequest(identifier = request.id).apply {
-                    requiresNetworkConnectivity = request.constraints.requiresInternet
+                    requiresNetworkConnectivity = request.constraints.requiresInternet ||
+                            request.constraints.requiresUnmeteredNetwork ||
+                            request.constraints.requiresNonRoamingNetwork
                     requiresExternalPower = request.constraints.requiresCharging
                 }
                 submitRequest(taskRequest, request.id)

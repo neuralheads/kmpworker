@@ -117,9 +117,9 @@ object TaskMonitor {
     /**
      * Emits [TaskState.Cancelled] for the given task ID and removes any stored events.
      */
-    suspend fun cancel(taskId: String) {
+    suspend fun cancel(taskId: String, reason: String = "") {
         eventStore?.clear(taskId)
-        emit(taskId, TaskState.Cancelled)
+        emit(taskId, TaskState.Cancelled(reason))
     }
 
     /**

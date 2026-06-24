@@ -25,5 +25,6 @@ include(
     ":transfer",
     ":testing",
     ":umbrella",
+    ":inspector",
     ":sample"
 )

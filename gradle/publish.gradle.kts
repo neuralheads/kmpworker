@@ -57,16 +57,21 @@ val envSigningPassword = System.getenv("SIGNING_PASSWORD")
 val envMavenUsername = System.getenv("MAVEN_CENTRAL_USERNAME")
 val envMavenPassword = System.getenv("MAVEN_CENTRAL_PASSWORD")
 
-val signingKey = envSigningKey ?: readMultilineSigningKey()
+// Read signing key (from SIGNING_KEY, Gradle project properties, or ~/.gradle/gradle.properties)
+val signingKey = envSigningKey 
+    ?: (project.findProperty("signingInMemoryKey") as? String)?.replace("\\n", "\n")
+    ?: readMultilineSigningKey()
+
 if (signingKey != null) {
-    // extraProperties injection is safe for credentials in vanniktech 0.33.0;
-    // only SONATYPE_HOST / SONATYPE_AUTOMATIC_RELEASE / RELEASE_SIGNING_ENABLED
-    // are finalised during apply() and must come from gradle.properties.
     project.extensions.extraProperties["signingInMemoryKey"] = signingKey
 }
 
-if (envSigningPassword != null) {
-    project.extensions.extraProperties["signingInMemoryKeyPassword"] = envSigningPassword
+// Read signing password (from SIGNING_PASSWORD or Gradle project properties)
+val signingPassword = envSigningPassword 
+    ?: (project.findProperty("signingInMemoryKeyPassword") as? String)
+
+if (signingPassword != null) {
+    project.extensions.extraProperties["signingInMemoryKeyPassword"] = signingPassword
 }
 
 if (envMavenUsername != null) {
